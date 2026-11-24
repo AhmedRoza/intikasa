@@ -4,18 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>انتكاسة</title>
-<script>
-// stealth: swap the visible app name as early as possible
-try {
-  var __st = JSON.parse(localStorage.getItem('intikasa.v1') || 'null');
-  if (__st && __st.stealth) {
-    document.title = 'ملاحظات';
-    document.addEventListener('DOMContentLoaded', function () {
-      var sn = document.querySelector('.splash-name'); if (sn) sn.textContent = 'ملاحظات';
-    });
-  }
-} catch (e) {}
-</script>
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -74,7 +62,6 @@ try {
   <main id="pages">
     <!-- HOME -->
     <section class="page" id="page-home">
-      <div class="page-hero"><img src="icons/ring.png" alt=""></div>
       <img class="home-meme" id="home-meme" src="img/meme-top.jpg" alt="">
       <div class="hero-title" id="hero-title"></div>
       <div id="counter"></div>
@@ -91,6 +78,9 @@ try {
       <div class="card daily" id="daily-card">
         <div class="card-label">💬 رسالة اليوم</div>
         <div id="daily-text"></div>
+      </div>
+      <div class="card quote-card" id="quote-card">
+        <img id="quote-img" class="quote-img" src="img/quote-1.jpg" alt="">
       </div>
       <div class="card hidden" id="event-card">
         <div class="card-label">⏳ عدّاد المناسبة</div>
@@ -235,6 +225,11 @@ try {
     <section class="page hidden" id="page-chal">
       <div class="page-hero"><img src="icons/shield.png" alt=""></div>
       <div class="card-label big-label">🏆 تحديات VIP</div>
+      <div class="card" id="autoch-card">
+        <div class="card-label">⏱️ تحديات تلقائية</div>
+        <div class="hint">بتشتغل لوحدها من أول يوم في سلسلتك الحالية، من غير زر بدء. لو انتكست السلسلة بترجع من الأول، واللي كسبته بيفضل معاك.</div>
+        <div id="autoch-grid" class="autoch-grid"></div>
+      </div>
       <div id="chal2-active"></div>
       <div id="chal2-grid" class="chal2-grid"></div>
       <div class="hint" style="text-align:center;margin-top:12px">اختار تحدي واحد وابدأه.. لو انتكست، التحدي اللي انت فيه بيتصفّر وبيتحسب من الأول، وأوسمتك اللي كسبتها بتفضل معاك دايمًا 💪</div>
@@ -430,31 +425,11 @@ try {
       </div>
       <div class="hamatah">تم التصميم بواسطة حماته بكل حب ♥</div>
     </section>
-
-    <section class="page hidden" id="page-tasks">
-      <div class="fan-wrap" id="fan-wrap">
-        <div class="fan-world" id="fan-world"></div>
-        <div class="fan-hint">اسحب عشان تتنقل بين الأيام 👆 ودوس على أي يوم</div>
-      </div>
-      <div class="day-zoom hidden" id="day-zoom">
-        <button class="dz-close" id="dz-close">✕</button>
-        <div class="dz-head">
-          <div class="dz-circle" id="dz-circle"><span id="dz-num"></span></div>
-          <div class="dz-month" id="dz-month"></div>
-        </div>
-        <div class="dz-chips" id="dz-chips"></div>
-        <div class="dz-add">
-          <input id="dz-input" class="text-input" type="text" maxlength="60" placeholder="مهمة جديدة لليوم ده...">
-          <button class="btn primary" id="dz-add">ضيف</button>
-        </div>
-      </div>
-    </section>
   </main>
 
   <nav id="bottomnav">
     <button class="nav-btn active" data-page="home">🏠<span>الرئيسية</span></button>
     <button class="nav-btn" data-page="calendar">📅<span>التقويم</span></button>
-    <button class="nav-btn" data-page="tasks">📋<span>مهام</span></button>
     <button class="nav-btn hidden" data-page="occ" id="nav-occ">⏳<span>مناسبة</span></button>
     <button class="nav-btn" data-page="stats">📊<span>الإحصائيات</span></button>
     <button class="nav-btn" data-page="tree">🌳<span>شجرتي</span></button>

@@ -141,15 +141,14 @@
     if (state && state.v === 1) {
       state.dayNotes = state.dayNotes || {}; state.avatar = state.avatar || null; state.profileName = state.profileName || ''; state.theme = state.theme || 'dark';
       state.hardDays = state.hardDays || []; state.medalStyle = state.medalStyle || 'neon';
-      state.event = state.event || null; state.stealth = !!state.stealth; state.bio = !!state.bio;
+      state.event = state.event || null; state.bio = !!state.bio;
       state.icon = (state.icon === 'cap' || state.icon === 'stick') ? state.icon : 'main';
-      state.stealth = false;
       state.batman3 = !!state.batman3;
-      state.tasks = state.tasks || {};
       state.counterAccent = state.counterAccent || '';
       state.abajouraUntil = state.abajouraUntil || 0;
       state.topPhotoIdx = state.topPhotoIdx || 0;
       state.wchallenge = state.wchallenge || null;
+      state.autoCh = state.autoCh || {};
       state.wchWins = state.wchWins || 0;
       state.pwCount = state.pwCount || 0;
       if (state.pwRunAwards === undefined) state.pwRunAwards = -1; // -1 = أول مرة، تهيئة من غير بالون
@@ -494,22 +493,23 @@
         ref.last = p[k];
       }
       if (ref.fill) {
-        if (st === 'pills') ref.fill.style.width = (fr[k] * 100).toFixed(2) + '%';
-        else if (st === 'bars') ref.fill.style.height = (Math.max(2, fr[k] * 100)).toFixed(2) + '%';
+        if (st === 'pills') ref.fill.style.transform = 'translate3d(' + ((1 - fr[k]) * 100).toFixed(2) + '%,0,0)';
+        else if (st === 'bars') ref.fill.style.transform = 'scaleY(' + (Math.max(.02, fr[k])).toFixed(3) + ')';
       }
       if (ref.arc) ref.arc.style.strokeDashoffset = ref.circ * (1 - fr[k]);
     }
     const msL = $('ms-longest'), msR = $('ms-relapses'), msT = $('ms-total'), msS = $('ms-shortest');
     if (msL) {
-      msL.textContent = Math.floor(longestStreak(now) / DAY);
-      msR.textContent = state.relapses.length;
-      msT.textContent = totalCleanDays(now);
-      if (msS) msS.textContent = Math.floor(shortestStreak(now) / DAY);
+      const setTxt = (n, v) => { v = String(v); if (n.textContent !== v) n.textContent = v; };
+      setTxt(msL, Math.floor(longestStreak(now) / DAY));
+      setTxt(msR, state.relapses.length);
+      setTxt(msT, totalCleanDays(now));
+      if (msS) setTxt(msS, Math.floor(shortestStreak(now) / DAY));
     }
   }
 
   /* ---------- pages ---------- */
-  const PAGES = { home: 'page-home', calendar: 'page-calendar', tasks: 'page-tasks', occ: 'page-occ', stats: 'page-stats', tree: 'page-tree', chal: 'page-chal', ach: 'page-ach', profile: 'page-profile', settings: 'page-settings' };
+  const PAGES = { home: 'page-home', calendar: 'page-calendar', occ: 'page-occ', stats: 'page-stats', tree: 'page-tree', chal: 'page-chal', ach: 'page-ach', profile: 'page-profile', settings: 'page-settings' };
   function showPage(p) {
     page = p;
     for (const k in PAGES) $(PAGES[k]).classList.toggle('hidden', k !== p);
@@ -522,7 +522,6 @@
     if (p === 'tree') renderTree();
     if (p === 'profile') renderProfile();
     if (p === 'settings') renderSettings();
-    if (p === 'tasks') renderTasksFan();
   }
 
   /* ---------- heatmap ---------- */
@@ -664,6 +663,12 @@
     requestAnimationFrame(step);
   }
 
+  /* تنزيل شريط بحركة clip-path: بيرسم بس من غير ما يعيد حساب تخطيط الصفحة */
+  function growClip(elm, dir, delay) {
+    elm.style.clipPath = dir === 'v' ? 'inset(100% 0 0 0)' : 'inset(0 0 0 100%)';
+    setTimeout(() => { elm.style.clipPath = 'inset(0 0 0 0)'; }, delay + 30);
+  }
+
   function renderStats() {
     const now = Date.now();
     countUpDur($('st-longest'), Math.floor(longestStreak(now) / DAY));
@@ -728,8 +733,8 @@
       }
       const col = el('div', 'bar-col');
       const bar = el('div', 'bar');
-      bar.style.height = '0%';
-      setTimeout(() => { bar.style.height = Math.max(3, clean / 7 * 100) + '%'; }, 120 + (7 - i) * 70);
+      bar.style.height = Math.max(3, clean / 7 * 100) + '%';
+      growClip(bar, 'v', 120 + (7 - i) * 70);
       const ws = new Date(wStart);
       col.appendChild(bar);
       col.appendChild(el('div', 'bar-label', ws.getDate() + '/' + (ws.getMonth() + 1)));
@@ -750,8 +755,8 @@
       item.appendChild(el('div', 'reason-name', esc(name) + (idx === 0 ? ' 🔥' : '')));
       const wrap = el('div', 'reason-bar-wrap');
       const bar = el('div', 'reason-bar');
-      bar.style.width = '0%';
-      setTimeout(() => { bar.style.width = (cnt / max * 100) + '%'; }, 100 + idx * 90);
+      bar.style.width = (cnt / max * 100) + '%';
+      growClip(bar, 'h', 100 + idx * 90);
       wrap.appendChild(bar);
       item.appendChild(wrap);
       item.appendChild(el('div', 'reason-count', cnt + ' ' + U.rel(cnt)));
@@ -793,7 +798,6 @@
           if (col > 0) colEl.classList.add('mstart');
         }
         const c = el('div', 'cg-c');
-        c.style.animationDelay = (col * 20 + r * 8) + 'ms';
         const k = dayKey(ts);
         if (ts > today0) c.classList.add('fut');
         else {
@@ -830,7 +834,6 @@
     for (let d = 1; d <= dim; d++) {
       const ts = new Date(y, m, d).getTime();
       const cell = el('div', 'dc-cell');
-      cell.style.animationDelay = (d * 18) + 'ms';
       cell.appendChild(el('span', 'dc-num', String(d)));
       const k = dayKey(ts);
       let filled = false;
@@ -989,10 +992,9 @@
       const b2 = el('div', 'mv-bar prv');
       b2.appendChild(el('span', 'mv-val', String(pv)));
       bars.appendChild(b1); bars.appendChild(b2);
-      setTimeout(() => {
-        b1.style.width = Math.max(8, cv / mx * 100) + '%';
-        b2.style.width = Math.max(8, pv / mx * 100) + '%';
-      }, delay);
+      b1.style.width = Math.max(8, cv / mx * 100) + '%';
+      b2.style.width = Math.max(8, pv / mx * 100) + '%';
+      growClip(b1, 'h', delay); growClip(b2, 'h', delay);
       delay += 120;
       row.appendChild(bars);
       const diff = cv - pv;
@@ -1304,8 +1306,8 @@
       const box = el('div', 'wk-col');
       const bw = el('div', 'wk-bar-wrap');
       const b = el('div', 'wk-bar');
-      b.style.height = '4%';
-      setTimeout(() => { b.style.height = Math.max(4, val / max * 100) + '%'; }, delay);
+      b.style.height = Math.max(4, val / max * 100) + '%';
+      growClip(b, 'v', delay);
       bw.appendChild(b);
       box.appendChild(bw);
       const num = el('div', 'wk-num', '0');
@@ -1349,8 +1351,8 @@
       const box = el('div', 'wk-col');
       const bw = el('div', 'wk-bar-wrap');
       const b = el('div', 'wk-bar');
-      b.style.height = '4%';
-      setTimeout(() => { b.style.height = Math.max(4, val / 7 * 100) + '%'; }, delay);
+      b.style.height = Math.max(4, val / 7 * 100) + '%';
+      growClip(b, 'v', delay);
       bw.appendChild(b);
       box.appendChild(bw);
       const num = el('div', 'wk-num', '0');
@@ -1482,7 +1484,7 @@
       cx.fillText('اتحقق يوم ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(), 540, 922);
       cx.fillStyle = '#55556a';
       cx.font = '600 38px Cairo, sans-serif';
-      cx.fillText(state.stealth ? 'ملاحظات' : 'انتكاسة', 540, 1006);
+      cx.fillText('انتكاسة', 540, 1006);
       const out = cv.toDataURL('image/png');
       if (window.AndroidBridge && AndroidBridge.shareImage) {
         AndroidBridge.shareImage(out.split(',')[1]);
@@ -1666,8 +1668,8 @@
     const lp = $('level-progress');
     if (li + 1 < LEVELS.length) {
       const lo = LEVELS[li][0], hi = LEVELS[li + 1][0];
-      lp.style.width = '0%';
-      setTimeout(() => { lp.style.width = ((xp - lo) / (hi - lo) * 100).toFixed(1) + '%'; }, 150);
+      lp.style.width = ((xp - lo) / (hi - lo) * 100).toFixed(1) + '%';
+      growClip(lp, 'h', 150);
       $('level-next').textContent = 'باقي ' + (hi - xp) + ' نقطة على مستوى ' + LEVELS[li + 1][1];
     } else {
       lp.style.width = '100%';
@@ -1741,7 +1743,7 @@
       s += `<circle cx="${X(h.ts)}" cy="42" r="3" fill="#60a5fa"/>`;
     }
     s += `<circle cx="308" cy="30" r="6" fill="var(--acc)"/>`;
-    s += `<circle cx="12" cy="30" r="6" fill="var(--acc)"><animate attributeName="r" values="5;7;5" dur="1.6s" repeatCount="indefinite"/></circle>`;
+    s += `<circle class="jr-halo" cx="12" cy="30" r="10" fill="var(--acc)"/><circle cx="12" cy="30" r="6" fill="var(--acc)"/>`;
     const d0 = new Date(t0);
     s += `<text x="308" y="58" text-anchor="end" font-size="11" fill="#8a8a9c">البداية ${d0.getDate()}/${d0.getMonth() + 1}</text>`;
     s += `<text x="12" y="58" text-anchor="start" font-size="11" fill="#8a8a9c">النهاردة</text>`;
@@ -2223,10 +2225,8 @@
   function pickIcon(id) {
     if (state.icon === id) return;
     state.icon = id;
-    state.stealth = false;
     save();
     if (window.AndroidBridge && AndroidBridge.setIcon) AndroidBridge.setIcon(id);
-    applyStealth();
     renderIconPicker();
     toast('الأيقونة اتغيرت ✓ هتظهر خلال لحظات');
   }
@@ -2248,18 +2248,6 @@
       toast(state.bio ? 'البصمة اتفعلت 👆' : 'البصمة اتعطلت');
     };
     ba.appendChild(b);
-  }
-
-  /* وضع التخفي: تغيير الاسم الظاهر جوه التطبيق كمان */
-  function applyStealth() {
-    const nm = state.stealth ? 'ملاحظات' : 'انتكاسة';
-    document.title = nm;
-    const an = document.querySelector('.app-name');
-    if (an) an.textContent = nm;
-    const lt = document.querySelector('.lock-title');
-    if (lt) lt.textContent = nm;
-    const sn = document.querySelector('.splash-name');
-    if (sn) sn.textContent = nm;
   }
 
   /* عدّاد المناسبة على الرئيسية: أقرب مناسبة من القسم الجديد */
@@ -2393,22 +2381,20 @@
   /* ---------- PIN ---------- */
   let lockBuf = '', lockMode = 'unlock', lockFirst = '';
   const LOCK_IMGS = ['img/lock-1.jpg', 'img/lock-2.jpg', 'img/lock-3.jpg'];
-  let lockImgIdx = 0, lockImgTimer = null;
+  let lockImgIdx = parseInt(localStorage.getItem('intikasa.lastLockImg') || '-1', 10);
   function startPinSetup() { openLock('setup'); }
   function lockImgsStart() {
-    lockImgIdx = 0;
+    /* صورة واحدة عشوائية لكل فتحة، مختلفة عن آخر فتحة حتى بعد قفل التطبيق خالص */
     const im = $('lock-img');
-    if (im) im.src = LOCK_IMGS[0];
-    clearInterval(lockImgTimer);
-    lockImgTimer = setInterval(() => {
-      lockImgIdx = (lockImgIdx + 1) % LOCK_IMGS.length;
-      if (im) {
-        im.classList.add('fade');
-        setTimeout(() => { im.src = LOCK_IMGS[lockImgIdx]; im.classList.remove('fade'); }, 260);
-      }
-    }, 3500);
+    if (!im) return;
+    let idx = Math.floor(Math.random() * LOCK_IMGS.length);
+    if (LOCK_IMGS.length > 1) { while (idx === lockImgIdx) idx = Math.floor(Math.random() * LOCK_IMGS.length); }
+    lockImgIdx = idx;
+    try { localStorage.setItem('intikasa.lastLockImg', String(idx)); } catch (e) {}
+    im.classList.add('fade');
+    setTimeout(() => { im.src = LOCK_IMGS[lockImgIdx]; im.classList.remove('fade'); }, 120);
   }
-  function lockImgsStop() { clearInterval(lockImgTimer); lockImgTimer = null; }
+  function lockImgsStop() {}
   function closeLock() { $('lock').classList.add('hidden'); lockImgsStop(); }
   function openLock(mode) {
     lockMode = mode; lockBuf = ''; lockFirst = '';
@@ -2662,7 +2648,7 @@
         counterAccent: '', abajouraUntil: 0, topPhotoIdx: 0, wchallenge: null, wchWins: 0, updFreq: 'manual', updLast: null,
         pwCount: 0, pwRunStart: 0, pwRunAwards: -1,
         event: null,
-        stealth: false, icon: 'main',
+        icon: 'main',
         bio: false, urges: [], styles: STYLES.slice()
       };
       save();
@@ -2680,6 +2666,19 @@
   }
 
   /* ---------- daily phrase ---------- */
+  const QUOTE_IMGS = ['img/quote-1.jpg', 'img/quote-2.jpg', 'img/quote-3.jpg', 'img/quote-4.jpg', 'img/quote-5.jpg', 'img/quote-6.jpg', 'img/quote-7.jpg'];
+  function renderQuote() {
+    /* اقتباس مختلف مع كل فتحة للتطبيق (مش نفس آخر واحد) */
+    const im = $('quote-img');
+    if (!im) return;
+    let last = -1;
+    try { last = parseInt(localStorage.getItem('intikasa.lastQuote') || '-1', 10); } catch (e) {}
+    let idx = Math.floor(Math.random() * QUOTE_IMGS.length);
+    while (QUOTE_IMGS.length > 1 && idx === last) idx = Math.floor(Math.random() * QUOTE_IMGS.length);
+    try { localStorage.setItem('intikasa.lastQuote', String(idx)); } catch (e) {}
+    im.src = QUOTE_IMGS[idx];
+  }
+
   function renderDaily() {
     const doy = Math.floor(startOfDay(Date.now()) / DAY);
     const streakD = Math.floor(currentStreak(Date.now()) / DAY);
@@ -2690,7 +2689,7 @@
   }
 
   /* ---------- تحديث التطبيق (بحث فقط — مفيش تحميل) ---------- */
-  const APP_VERSION = '1.11';
+  const APP_VERSION = '1.14';
   const UPD_URL = 'https://api.github.com/repos/AhmedRoza/intikasa/releases/latest';
   const UPD_INTERVALS = { day: 864e5, week: 7 * 864e5, month: 30 * 864e5 };
   function cmpVer(a, b) {
@@ -2840,13 +2839,13 @@
   const TOP_PHOTOS = ['img/meme-top.jpg', 'img/top-1.jpg', 'img/top-2.jpg'];
   function boot() {
     $('app').classList.remove('hidden');
-    applyStealth();
     const ti = (state.topPhotoIdx || 0) % TOP_PHOTOS.length;
     $('home-meme').src = TOP_PHOTOS[ti];
     state.topPhotoIdx = (ti + 1) % TOP_PHOTOS.length;
     save();
     renderHero();
     renderDaily();
+    renderQuote();
     renderEventCard();
     renderRecovery();
     renderChallenge();
@@ -3030,7 +3029,7 @@
       location.reload();
     };
     setInterval(() => { if (page === 'home') tickCounter(false); }, 250);
-    setInterval(() => { if (!state) return; checkMedals(false); checkChallenge(); checkCh2(); checkWChallenge(); checkPerfect(); checkDevThanks(); }, 30000);
+    setInterval(() => { if (!state) return; checkMedals(false); checkChallenge(); checkCh2(); checkAutoCh(); checkWChallenge(); checkPerfect(); checkDevThanks(); }, 30000);
   }
 
   /* نتيجة البصمة من النظام */
@@ -3272,7 +3271,47 @@
     }
   }
 
+  const AUTOCH = [
+    { id: 'a45', name: '٤٥ يوم', days: 45 },
+    { id: 'a60', name: 'شهرين', days: 60 },
+    { id: 'a90', name: '٣ شهور', days: 90 },
+  ];
+  function checkAutoCh() {
+    if (!state) return;
+    state.autoCh = state.autoCh || {};
+    const d = Math.floor(currentStreak(Date.now()) / DAY);
+    let won = null;
+    AUTOCH.forEach((c) => { if (!state.autoCh[c.id] && d >= c.days) { state.autoCh[c.id] = Date.now(); won = c; } });
+    if (won) {
+      save();
+      if (navigator.vibrate) navigator.vibrate([150, 80, 150, 80, 400]);
+      toast('🏆 خلصت تحدي ' + won.name + '!');
+      if (page === 'chal') renderAutoCh();
+    }
+  }
+  function renderAutoCh() {
+    const box = $('autoch-grid');
+    if (!box) return;
+    checkAutoCh();
+    box.innerHTML = '';
+    const d = Math.floor(currentStreak(Date.now()) / DAY);
+    const R = 26, C = 2 * Math.PI * R;
+    AUTOCH.forEach((c) => {
+      const done = state.autoCh[c.id];
+      const frac = done ? 1 : Math.min(1, d / c.days);
+      const it = el('div', 'autoch-item' + (done ? ' done' : ''));
+      it.innerHTML =
+        '<svg viewBox="0 0 64 64"><circle class="ring-b" cx="32" cy="32" r="' + R + '"/>' +
+        '<circle class="ring-f" cx="32" cy="32" r="' + R + '" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - frac)).toFixed(1) + '"/>' +
+        '<text x="32" y="38" text-anchor="middle" font-size="17" font-weight="800" style="fill:var(--txt)">' + (done ? '✓' : Math.min(d, c.days)) + '</text></svg>' +
+        '<div class="autoch-name">' + c.name + '</div>' +
+        '<div class="autoch-sub">' + (done ? 'خلصته 🏆' : (c.days - d) + ' ' + U.day(c.days - d) + ' فاضلين') + '</div>';
+      box.appendChild(it);
+    });
+  }
+
   function renderChal2() {
+    renderAutoCh();
     const grid = $('chal2-grid');
     const actBox = $('chal2-active');
     if (!grid || !actBox) return;
@@ -3335,277 +3374,6 @@
     });
   }
 
-  /* ---------- مهام: فان التقويم ---------- */
-  // كل عمود = أسبوع (الاتنين تحت .. الحد فوق)، الأعمدة مفرودة كفان من محور فوق الشاشة
-  const FAN_ASTEP = 3.4;      // درجة لكل أسبوع
-  const FAN_RMON = 780;       // نصف قطر صف الاتنين من المحور
-  const FAN_DS = 40;          // المسافة بين الأيام على العمود
-  const FAN_COLW = 38;
-  const MON_EPOCH = new Date(2024, 0, 1).getTime(); // يوم اتنين
-  const fanMHue = (m) => Math.round((200 + m * 137.5) % 360); // لون مميز لكل شهر (زاوية ذهبية)
-  const WDAYS_MON = ['اتنين', 'تلت', 'أربع', 'خميس', 'جمعة', 'سبت', 'حد'];
-  let fanPan = 0;             // بالأسابيع
-  let fanBuiltYear = 0;
-  let fanCols = [];
-  let fanPills = [];
-  let fanColH = 0;
-  let zoomRef = null;
-
-  const wkIdx = (ts) => Math.round((ts - MON_EPOCH) / 6048e5);
-  const dayStart = (ts) => { const d = new Date(ts); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); };
-
-  function taskList(ts) { return state.tasks[dayKey(ts)] || []; }
-
-  function renderTasksFan() {
-    const y = new Date().getFullYear();
-    if (fanBuiltYear !== y) buildFan(y);
-    layoutFan(false);
-  }
-
-  function buildFan(y) {
-    const world = $('fan-world');
-    world.innerHTML = '';
-    fanCols = []; fanPills = [];
-    world.appendChild(el('div', 'fan-year', String(y)));
-    const today = dayStart(Date.now());
-    const w0 = wkIdx(new Date(y, 0, 1).getTime()) - 1;
-    const w1 = wkIdx(new Date(y, 11, 31).getTime()) + 1;
-    for (let w = w0; w <= w1; w++) {
-      const col = el('div', 'fan-col');
-      for (let i = 0; i <= 6; i++) { // الاتنين تحت .. الحد فوق
-        const ts = MON_EPOCH + (w * 7 + i) * 864e5;
-        const dt = new Date(ts);
-        const b = el('button', 'fan-day');
-        b.dataset.ts = ts;
-        const mh = fanMHue(dt.getMonth());
-        b.style.setProperty('--mtint', 'hsla(' + mh + ',85%,70%,.22)');
-        b.innerHTML = '<span>' + dt.getDate() + '</span>';
-        if (dt.getDate() === 1) {
-          b.classList.add('first');
-          b.style.color = 'hsl(' + mh + ',90%,78%)';
-          if (i > 0) b.classList.add('mnew'); else col.classList.add('mstart'); // خط فاصل بين الشهور
-        }
-        if (ts === today) b.classList.add('today');
-        const tl = taskList(ts);
-        if (tl.length) {
-          b.classList.add('has');
-          const undone = tl.some((t) => !t.done);
-          b.appendChild(el('i', 'mk ' + (undone ? 'mk-heart' : 'mk-check'), undone ? '\u2764' : '\u2713'));
-        }
-        b.onclick = () => { if (!fanDragged) openDayZoom(ts); };
-        col.appendChild(b);
-      }
-      world.appendChild(col);
-      fanCols.push({ el: col, w });
-    }
-    for (let m = 0; m < 12; m++) {
-      const pill = el('div', 'fan-pill', MONTHS[m]);
-      const h = fanMHue(m);
-      pill.style.background = 'hsl(' + h + ',85%,64%)';
-      pill.style.color = '#0a0a12';
-      pill.style.boxShadow = '0 0 14px hsla(' + h + ',85%,64%,.5)';
-      world.appendChild(pill);
-      fanPills.push({ el: pill, w: wkIdx(new Date(y, m, 1).getTime()) });
-    }
-    fanBuiltYear = y;
-    fanColH = fanCols.length ? fanCols[0].el.offsetHeight : 7 * FAN_DS + 16;
-    fanPan = wkIdx(today);
-  }
-
-  function layoutFan(animate) {
-    const world = $('fan-world');
-    world.classList.toggle('anim', !!animate);
-    fanCols.forEach(({ el: col, w }) => {
-      const a = (w - fanPan) * FAN_ASTEP;
-      const rad = a * Math.PI / 180;
-      const mx = FAN_RMON * Math.sin(rad);
-      const my = FAN_RMON * Math.cos(rad);
-      col.style.transformOrigin = '50% ' + (fanColH - FAN_DS / 2) + 'px';
-      col.style.transform = 'translate(' + (mx - FAN_COLW / 2) + 'px,' + (my - (fanColH - FAN_DS / 2)) + 'px) rotate(' + (-a) + 'deg)';
-      const c = Math.abs(a);
-      col.style.opacity = c > 27 ? 0 : c > 18 ? 0.25 : 1;
-      col.style.pointerEvents = c > 27 ? 'none' : 'auto';
-    });
-    fanPills.forEach(({ el: pill, w }) => {
-      const a = (w - fanPan) * FAN_ASTEP;
-      const rad = a * Math.PI / 180;
-      const r = FAN_RMON + 92;
-      const px = r * Math.sin(rad), py = r * Math.cos(rad);
-      pill.style.transform = 'translate(' + px + 'px,' + py + 'px) translate(-50%,-50%) rotate(' + (-a) + 'deg)';
-      const c = Math.abs(a);
-      pill.style.opacity = c > 27 ? 0 : c > 18 ? 0.25 : 1;
-    });
-  }
-
-  let fanDragged = false;
-  function bindFan() {
-    const wrap = $('fan-wrap');
-    let sx = 0, pan0 = 0, dragging = false;
-    wrap.addEventListener('pointerdown', (e) => {
-      if (zoomRef) return;
-      dragging = true; fanDragged = false;
-      sx = e.clientX; pan0 = fanPan;
-      wrap.setPointerCapture(e.pointerId);
-    });
-    wrap.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const dx = e.clientX - sx;
-      if (Math.abs(dx) > 7) fanDragged = true;
-      const w0 = wkIdx(new Date(new Date().getFullYear(), 0, 1).getTime()) - 2;
-      const w1 = wkIdx(new Date(new Date().getFullYear(), 11, 31).getTime()) + 2;
-      fanPan = Math.max(w0, Math.min(w1, pan0 - dx * 0.02));
-      layoutFan(false);
-    });
-    const end = () => {
-      if (!dragging) return;
-      dragging = false;
-      fanPan = Math.round(fanPan);
-      layoutFan(true);
-      setTimeout(() => { fanDragged = false; }, 60);
-    };
-    wrap.addEventListener('pointerup', end);
-    wrap.addEventListener('pointercancel', end);
-    $('dz-close').onclick = closeDayZoom;
-    $('dz-add').onclick = addZoomTask;
-    $('dz-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') addZoomTask(); });
-    // سحب رأسي في عرض اليوم للتنقل بين الأيام
-    const dz = $('day-zoom');
-    let sy = 0, sdy = 0, swiping = false;
-    dz.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('input,button')) return;
-      swiping = true; sy = e.clientY; sdy = 0;
-    });
-    dz.addEventListener('pointermove', (e) => { if (swiping) sdy = e.clientY - sy; });
-    dz.addEventListener('pointerup', () => {
-      if (!swiping) return;
-      swiping = false;
-      if (Math.abs(sdy) > 60) stepDay(sdy < 0 ? 1 : -1);
-    });
-  }
-
-  function stepDay(dir) {
-    if (!zoomRef) return;
-    openDayZoom(zoomRef.ts + dir * 864e5, true);
-  }
-
-  function openDayZoom(ts, swap) {
-    ts = dayStart(ts);
-    zoomRef = { ts };
-    const wrap = $('fan-wrap');
-    const world = $('fan-world');
-    world.style.transition = 'none';
-    world.style.transform = '';
-    void world.offsetWidth;
-    const wr = wrap.getBoundingClientRect();
-    const b = world.querySelector('.fan-day[data-ts="' + ts + '"]');
-    if (!b) return;
-    const br = b.getBoundingClientRect();
-    const wor = world.getBoundingClientRect();
-    const wsl = wor.left - wr.left, wst = wor.top - wr.top;
-    const px = br.left + br.width / 2 - wor.left, py = br.top + br.height / 2 - wor.top;
-    const S = 3.2;
-    const tx = wr.width / 2 - wsl - px * S, ty = wr.height * 0.40 - wst - py * S;
-    world.style.transition = '';
-    world.style.transformOrigin = '0 0';
-    world.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + S + ')';
-    wrap.classList.add('zoomed');
-    const dt = new Date(ts);
-    const num = $('dz-num');
-    num.textContent = dt.getDate();
-    num.classList.remove('dz-swap');
-    void num.offsetWidth;
-    num.classList.add('dz-swap');
-    $('dz-month').textContent = WDAYS_MON[(dt.getDay() + 6) % 7] + '، ' + MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
-    const circle = $('dz-circle');
-    const tl = taskList(ts);
-    circle.classList.toggle('has-undone', tl.some((t) => !t.done));
-    circle.classList.toggle('is-first', dt.getDate() === 1);
-    circle.classList.toggle('is-today', ts === dayStart(Date.now()));
-    renderZoomChips();
-    $('dz-input').value = '';
-    $('day-zoom').classList.remove('hidden');
-  }
-
-  function closeDayZoom() {
-    zoomRef = null;
-    $('day-zoom').classList.add('hidden');
-    const world = $('fan-world');
-    world.style.transform = '';
-    $('fan-wrap').classList.remove('zoomed');
-  }
-
-  const DZ_SLOTS = [
-    { dx: -112, dy: -88 }, { dx: 112, dy: -82 }, { dx: 138, dy: 2 },
-    { dx: -138, dy: 8 }, { dx: -84, dy: 92 }, { dx: 84, dy: 96 }
-  ];
-
-  function renderZoomChips() {
-    const box = $('dz-chips');
-    box.innerHTML = '';
-    const { ts } = zoomRef;
-    const tl = taskList(ts);
-    if (!tl.length) {
-      box.innerHTML = '<div class="empty" style="position:absolute;left:50%;top:56%;transform:translateX(-50%);width:max-content">مفيش مهام لليوم ده — ضيف أول واحدة تحت 👇</div>';
-      return;
-    }
-    tl.forEach((t, i) => {
-      const slot = DZ_SLOTS[i % DZ_SLOTS.length];
-      const chip = el('button', 'dz-chip' + (t.done ? ' done' : ''));
-      chip.style.left = 'calc(50% + ' + slot.dx + 'px)';
-      chip.style.top = 'calc(40% + ' + slot.dy + 'px)';
-      chip.innerHTML = '<i>' + (t.done ? '✓' : '❤') + '</i><span>' + esc(t.t) + '</span>';
-      let lp = null, lpFired = false;
-      chip.addEventListener('pointerdown', () => {
-        lpFired = false;
-        lp = setTimeout(() => {
-          lpFired = true;
-          tl.splice(i, 1);
-          if (!tl.length) delete state.tasks[dayKey(ts)];
-          save(); renderZoomChips(); refreshFanDay(ts);
-          if (zoomRef) openDayZoom(ts);
-          toast('اتمسحت 🗑️');
-        }, 600);
-      });
-      chip.addEventListener('pointerup', () => {
-        clearTimeout(lp);
-        if (lpFired) return;
-        t.done = !t.done;
-        save(); renderZoomChips(); refreshFanDay(ts);
-        $('dz-circle').classList.toggle('has-undone', tl.some((x) => !x.done));
-        if (t.done && navigator.vibrate) navigator.vibrate(40);
-      });
-      chip.addEventListener('pointerleave', () => clearTimeout(lp));
-      chip.addEventListener('pointercancel', () => clearTimeout(lp));
-      box.appendChild(chip);
-    });
-  }
-
-  function addZoomTask() {
-    const v = $('dz-input').value.trim();
-    if (!v || !zoomRef) return;
-    const { ts } = zoomRef;
-    state.tasks[dayKey(ts)] = state.tasks[dayKey(ts)] || [];
-    state.tasks[dayKey(ts)].push({ t: v, done: false });
-    save();
-    $('dz-input').value = '';
-    renderZoomChips();
-    refreshFanDay(ts);
-    $('dz-circle').classList.add('has-undone');
-    toast('اتضافت ✅');
-  }
-
-  function refreshFanDay(ts) {
-    const b = $('fan-world').querySelector('.fan-day[data-ts="' + ts + '"]');
-    if (!b) return;
-    b.querySelector('.mk')?.remove();
-    const tl = taskList(ts);
-    b.classList.toggle('has', tl.length > 0);
-    if (tl.length) {
-      const undone = tl.some((t) => !t.done);
-      b.appendChild(el('i', 'mk ' + (undone ? 'mk-heart' : 'mk-check'), undone ? '❤' : '✓'));
-    }
-  }
-
   /* ---------- splash ---------- */
   window.addEventListener('load', () => {
     setTimeout(() => {
@@ -3619,7 +3387,6 @@
   bind();
   bindNotes();
   bindAvatar();
-  bindFan();
   bindOcc();
   if (load()) {
     applyAccent();

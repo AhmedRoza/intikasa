@@ -13,14 +13,13 @@ An Android app to help you quit a bad habit and track your progress day by day: 
   <a href="docs/screenshots/full-2-chal.png"><img src="docs/screenshots/prev-2-chal.png" width="160"/></a>
   <a href="docs/screenshots/full-3-occ.png"><img src="docs/screenshots/prev-3-occ.png" width="160"/></a>
   <a href="docs/screenshots/full-4-calendar.png"><img src="docs/screenshots/prev-4-calendar.png" width="160"/></a>
-  <a href="docs/screenshots/full-5-tasks.png"><img src="docs/screenshots/prev-5-tasks.png" width="160"/></a>
+  <a href="docs/screenshots/full-5-stats.png"><img src="docs/screenshots/prev-5-stats.png" width="160"/></a>
 </p>
 <p align="center">
-  <a href="docs/screenshots/full-6-stats.png"><img src="docs/screenshots/prev-6-stats.png" width="160"/></a>
-  <a href="docs/screenshots/full-7-tree.png"><img src="docs/screenshots/prev-7-tree.png" width="160"/></a>
-  <a href="docs/screenshots/full-8-ach.png"><img src="docs/screenshots/prev-8-ach.png" width="160"/></a>
-  <a href="docs/screenshots/full-9-profile.png"><img src="docs/screenshots/prev-9-profile.png" width="160"/></a>
-  <a href="docs/screenshots/full-10-settings.png"><img src="docs/screenshots/prev-10-settings.png" width="160"/></a>
+  <a href="docs/screenshots/full-6-tree.png"><img src="docs/screenshots/prev-6-tree.png" width="160"/></a>
+  <a href="docs/screenshots/full-7-ach.png"><img src="docs/screenshots/prev-7-ach.png" width="160"/></a>
+  <a href="docs/screenshots/full-8-profile.png"><img src="docs/screenshots/prev-8-profile.png" width="160"/></a>
+  <a href="docs/screenshots/full-9-settings.png"><img src="docs/screenshots/prev-9-settings.png" width="160"/></a>
 </p>
 
 <p align="center"><i>الصور ببيانات تجريبية لأغراض العرض فقط — اضغط على أي لقطة لعرض الصفحة كاملة.<br/>Screenshots show demo data for illustration only — click any shot to view the full page.</i></p>
@@ -42,6 +41,8 @@ An Android app to help you quit a bad habit and track your progress day by day: 
 - A relapse resets only the current challenge; earned medals stay forever.
 - بالإضافة للتحديات القديمة بأوسمتها النيون، زي ما هي.
 - The original challenges with their neon medals remain, unchanged.
+- تحديات تلقائية (٤٥ يوم، شهرين = ٦٠ يوم، ٣ شهور = ٩٠ يوم) بتشتغل لوحدها من أول يوم في سلسلتك الحالية، من غير زر بدء، بتتحسب بالأيام المتواصلة من غير انتكاسة.
+- Automatic challenges (45 days, 2 months = 60 days, 3 months = 90 days) that run on their own from the start of your current streak, with no start button, counting consecutive days without a relapse.
 
 ### المناسبات — Occasions
 - مناسبات متعددة باسم ولون، عداد تنازلي حي (أيام وساعات ودقايق وثواني)، وخريطة شهور لكل مناسبة.
@@ -57,12 +58,16 @@ An Android app to help you quit a bad habit and track your progress day by day: 
 - XP = الأيام النضيفة ×١٠ + الأوسمة ×٥٠ + الفوز بالتحدي الأسبوعي ×١٠٠.
 
 ### المتابعة — Tracking
-- سجل الانضباط: خريطة شهور بثلاث حالات (يوم نضيف، انتكاسة، يوم عادي) مع تفاصيل اليوم بالضغط.
-- Discipline log: three-state month maps (clean / relapse / normal) with per-day details.
+- سجل الانضباط: شبكة آخر ٢٦ أسبوع وتقويم شهري بثلاث حالات (يوم نضيف، انتكاسة، يوم صعب) مع تفاصيل اليوم بالضغط، وألوان بتتغير مع الثيم الفاتح والغامق.
+- Discipline log: a 26-week grid and a monthly calendar (clean / relapse / hard day) with per-day details, with colors that follow the light and dark themes.
 - إحصائيات: أطول وأقصر سلسلة، عدد الانتكاسات وأسبابها، تقرير أسبوعي وشهري.
 - Stats: longest/shortest streak, relapse count and reasons, weekly and monthly reports.
 - مشاركة صورة بكل إحصائياتك من الإعدادات، وصورة ملخص شهري.
 - Shareable stats image and monthly summary image.
+
+### الاقتباسات — Quotes
+- كارت اقتباس في الرئيسية، بيظهر فيه اقتباس مختلف مع كل فتحة للتطبيق.
+- A quote card on Home that shows a different quote each time the app opens.
 
 ### كارت التعافي — Recovery Card
 - نصايح ومعلومات عامة عن التعافي على حسب العادة (سجاير / سكر / نوم) من مصادر طبية موثوقة (NHS، Verywell Health، Sleep Foundation)، وتقدر تقفله في أي وقت.
@@ -71,16 +76,16 @@ An Android app to help you quit a bad habit and track your progress day by day: 
 ### الخصوصية — Privacy
 - كل البيانات على موبايلك بس. مفيش حسابات، مفيش تحليلات، مفيش إشعارات، مفيش خدمات في الخلفية.
 - All data stays on the phone. No accounts, no analytics, no notifications, no background services.
-- قفل PIN اختياري بيسأل عند كل فتح للتطبيق، مع خيار بصمة.
-- Optional PIN lock on every app open, with biometrics.
+- قفل PIN اختياري بيسأل عند كل فتح للتطبيق، مع خيار بصمة، وصورة مختلفة على شاشة القفل مع كل فتحة.
+- Optional PIN lock on every app open, with biometrics, and a different image on the lock screen each time.
 - الاستثناء الوحيد اختياري: البحث عن تحديث — طلب واحد لـGitHub عن رقم آخر نسخة (يدوي افتراضيًا، أو تلقائي يومي/أسبوعي/شهري عند فتح التطبيق). مفيش بيانات عن عادتك أو نسختك الاحتياطية أو استخدامك بتتبعت، بس GitHub بيشوف بيانات الاتصال العادية زي عنوان الـIP.
 - The only optional exception: update check — one GitHub request for the latest version number (manual by default, or daily/weekly/monthly on app open). No habit records, backups, or usage data are uploaded; GitHub receives ordinary connection metadata such as your IP address.
 - نسخ احتياطي محلي في Downloads بكلمة سر اختيارية (تشفير)، واستعادة.
 - Local encrypted-optional backup to Downloads and restore.
 
 ### تخصيص — Personalization
-- ١٢ أيقونة للتطبيق تختار منهم من الإعدادات.
-- 12 launcher icons to pick from in Settings.
+- ١٢ أيقونة للتطبيق تختار منهم من الإعدادات، برسمة كبيرة وواضحة على الشاشة الرئيسية.
+- 12 launcher icons to pick from in Settings, with large, clear artwork on the home screen.
 - ألوان مميزة (Accent) قابلة للتغيير + وضع فاتح، وصورة شخصية مع إطار نيون.
 - Accent color picker + light theme, profile avatar with a neon ring.
 

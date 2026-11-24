@@ -1,0 +1,33 @@
+انتكاسة v1.14 — التغييرات (مجمّعة من بعد النسخة المنشورة ١.١١):
+
+الجديد
+١. تحديات تلقائية: ٤٥ يوم، شهرين (٦٠ يوم)، و٣ شهور (٩٠ يوم). بتشتغل لوحدها من أول يوم في سلسلتك الحالية من غير زر بدء، وبتتحسب بالأيام المتواصلة من غير انتكاسة. لو انتكست السلسلة بترجع من الأول، واللي خلصته بيفضل متسجل. وهي إضافة لتحديات VIP اللي بتبدأها بنفسك، ومن غير ما تتغير.
+٢. اقتباسات: كارت في الرئيسية فيه ٧ اقتباسات، بيظهر منهم واحد مختلف مع كل فتحة للتطبيق.
+٣. شاشة القفل: ٣ صور جديدة بدل القديمة، واحدة مختلفة كل مرة تفتح القفل، وبتفضل ثابتة وإنت بتكتب الرقم.
+٤. أيقونات التطبيق: الرسمة بقت أكبر وأوضح في الأيقونة الأساسية والـ١١ بديل، وبتملى مساحة الأيقونة بدل ما تبقى صغيرة جواها (أندرويد ٨ وأحدث).
+
+التعديلات والإصلاحات
+٥. اتشال قسم المهام خالص (بيانات المهام القديمة لسه محفوظة على الموبايل من غير ما تتمسح).
+٦. العلم اتعاد من صورته الأصلية في مربع بحواف مدورة وحركة خفيفة.
+٧. البار اللي تحت: رجعت المساحة اللي تحت الصفحات علشان تسحب لآخر المحتوى من غير ما البار يغطي الأرقام. المشكلة ظهرت في ١.١٣ بسبب سطر اتشال بالغلط.
+٨. اتشالت العلامة الدائرية اللي كانت فوق الصورة في الرئيسية.
+٩. شبكة سجل الانضباط: ألوان الخانات الفاضية والجاية متناسقة في الثيم الفاتح والغامق، واتشال التوهج من الخانات، والشبكة بقت داخل الكارت.
+١٠. تخفيف التطبيق: الصور اتصغّرت وانضغطت، والعدّاد والشاشات اللي فيها شبكات وأعمدة بتفتح بحركات أخف بدل مئات الحركات الصغيرة.
+
+SHA-256 (intikasa-v1.14.apk): 33e2d559ed51b6111af46a24a8b3fa0b636625552fa56a70f5355a5bddc9e238
+
+Intikasa v1.14 — changes (cumulative since the public 1.11 release):
+
+New
+1. Automatic challenges: 45 days, 2 months (60 days) and 3 months (90 days). They run on their own from the start of your current streak with no start button, counting consecutive days without a relapse. A relapse restarts the streak; challenges you already finished stay recorded. They are in addition to the VIP challenges you start yourself, which are unchanged.
+2. Quotes: a Home card with 7 quotes, showing a different one each time the app opens.
+3. Lock screen: 3 new images replace the old ones, a different one each time you open the lock, steady while you type the PIN.
+4. Launcher icons: the artwork is larger and clearer on the main icon and all 11 alternates, filling the icon area instead of floating small inside it (Android 8 and newer).
+
+Changes and fixes
+5. The Tasks section was removed entirely (previously saved task data stays on the phone, not deleted).
+6. The flag was rebuilt from its original image as a rounded tile with a light sway.
+7. Bottom bar: the space under each page is restored so you can scroll to the last content without the bar covering the numbers. The problem appeared in 1.13 because a line was removed by mistake.
+8. The teal circle mark above the Home photo was removed.
+9. Discipline grid: empty and upcoming cells use consistent colors in the light and dark themes, the per-cell glow was removed, and the grid fits inside its card.
+10. Lighter app: images were reduced and compressed, and the counter and screens with grids and bars use lighter animations instead of hundreds of small ones.

@@ -9,18 +9,18 @@ An Android app to help you quit a bad habit and track your progress day by day: 
 ## لقطات الشاشة — Screenshots
 
 <p align="center">
-  <a href="docs/screenshots/full-1-home.png"><img src="docs/screenshots/prev-1-home.png" width="200"/></a>
-  <a href="docs/screenshots/full-2-chal.png"><img src="docs/screenshots/prev-2-chal.png" width="200"/></a>
-  <a href="docs/screenshots/full-3-occ.png"><img src="docs/screenshots/prev-3-occ.png" width="200"/></a>
-  <a href="docs/screenshots/full-4-calendar.png"><img src="docs/screenshots/prev-4-calendar.png" width="200"/></a>
-  <a href="docs/screenshots/full-5-tasks.png"><img src="docs/screenshots/prev-5-tasks.png" width="200"/></a>
+  <a href="docs/screenshots/full-1-home.png"><img src="docs/screenshots/prev-1-home.png" width="160"/></a>
+  <a href="docs/screenshots/full-2-chal.png"><img src="docs/screenshots/prev-2-chal.png" width="160"/></a>
+  <a href="docs/screenshots/full-3-occ.png"><img src="docs/screenshots/prev-3-occ.png" width="160"/></a>
+  <a href="docs/screenshots/full-4-calendar.png"><img src="docs/screenshots/prev-4-calendar.png" width="160"/></a>
+  <a href="docs/screenshots/full-5-tasks.png"><img src="docs/screenshots/prev-5-tasks.png" width="160"/></a>
 </p>
 <p align="center">
-  <a href="docs/screenshots/full-6-stats.png"><img src="docs/screenshots/prev-6-stats.png" width="200"/></a>
-  <a href="docs/screenshots/full-7-tree.png"><img src="docs/screenshots/prev-7-tree.png" width="200"/></a>
-  <a href="docs/screenshots/full-8-ach.png"><img src="docs/screenshots/prev-8-ach.png" width="200"/></a>
-  <a href="docs/screenshots/full-9-profile.png"><img src="docs/screenshots/prev-9-profile.png" width="200"/></a>
-  <a href="docs/screenshots/full-10-settings.png"><img src="docs/screenshots/prev-10-settings.png" width="200"/></a>
+  <a href="docs/screenshots/full-6-stats.png"><img src="docs/screenshots/prev-6-stats.png" width="160"/></a>
+  <a href="docs/screenshots/full-7-tree.png"><img src="docs/screenshots/prev-7-tree.png" width="160"/></a>
+  <a href="docs/screenshots/full-8-ach.png"><img src="docs/screenshots/prev-8-ach.png" width="160"/></a>
+  <a href="docs/screenshots/full-9-profile.png"><img src="docs/screenshots/prev-9-profile.png" width="160"/></a>
+  <a href="docs/screenshots/full-10-settings.png"><img src="docs/screenshots/prev-10-settings.png" width="160"/></a>
 </p>
 
 <p align="center"><i>الصور ببيانات تجريبية لأغراض العرض فقط — اضغط على أي لقطة لعرض الصفحة كاملة.<br/>Screenshots show demo data for illustration only — click any shot to view the full page.</i></p>

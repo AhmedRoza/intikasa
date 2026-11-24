@@ -25,13 +25,15 @@ An Android app to help you quit a bad habit and track your progress day by day: 
   <img src="docs/screenshots/full-10-settings.png" width="220"/>
 </p>
 
+<p align="center"><i>الصور ببيانات تجريبية لأغراض العرض فقط — Screenshots show demo data for illustration only.</i></p>
+
 ---
 
 ## المميزات — Features
 
 ### العداد — The Counter
-- عداد اكتفاء حي بالثواني والدقائق والساعات والأيام، مضبوط من التوقيت المخزن كل ثانية (مفيش أي انحراف).
-- Live clean-time counter (seconds → days), recomputed from the stored timestamp every tick — zero drift.
+- عداد اكتفاء حي بالثواني والدقائق والساعات والأيام، بيتحسب من التوقيت المخزن كل ثانية.
+- Live clean-time counter (seconds → days), recomputed from the stored timestamp every tick.
 - ٣ ستايلات للعداد (حبوب، تعبئة مائلة، حلقة دائرية) وتقدر تبدل بينهم بالسحب.
 - 3 counter styles (pills, slanted fill, circular ring) with swipe switching.
 
@@ -73,8 +75,8 @@ An Android app to help you quit a bad habit and track your progress day by day: 
 - All data stays on the phone. No accounts, no analytics, no notifications, no background services.
 - قفل PIN اختياري بيسأل عند كل فتح للتطبيق، مع خيار بصمة.
 - Optional PIN lock on every app open, with biometrics.
-- الاستثناء الوحيد اختياري: البحث عن تحديث — طلب واحد لـGitHub عن رقم آخر نسخة (يدوي افتراضيًا، أو تلقائي يومي/أسبوعي/شهري عند فتح التطبيق). مفيش أي بيانات شخصية بتتبعت؛ GitHub بيشوف بيانات الاتصال العادية فقط.
-- The only optional exception: update check — one GitHub request for the latest version number (manual by default, or daily/weekly/monthly on app open). No personal data is sent; GitHub only sees ordinary connection metadata.
+- الاستثناء الوحيد اختياري: البحث عن تحديث — طلب واحد لـGitHub عن رقم آخر نسخة (يدوي افتراضيًا، أو تلقائي يومي/أسبوعي/شهري عند فتح التطبيق). مفيش بيانات عن عادتك أو نسختك الاحتياطية أو استخدامك بتتبعت، بس GitHub بيشوف بيانات الاتصال العادية زي عنوان الـIP.
+- The only optional exception: update check — one GitHub request for the latest version number (manual by default, or daily/weekly/monthly on app open). No habit records, backups, or usage data are uploaded; GitHub receives ordinary connection metadata such as your IP address.
 - نسخ احتياطي محلي في Downloads بكلمة سر اختيارية (تشفير)، واستعادة.
 - Local encrypted-optional backup to Downloads and restore.
 
@@ -88,8 +90,8 @@ An Android app to help you quit a bad habit and track your progress day by day: 
 
 ## التقنيات — Tech
 
-- Android WebView + Kotlin shell — واجهة HTML/CSS/JS محلية بالكامل.
-- Android WebView + Kotlin shell — fully local HTML/CSS/JS UI.
+- Android WebView + Java shell — واجهة HTML/CSS/JS محلية بالكامل.
+- Android WebView + Java shell — fully local HTML/CSS/JS UI.
 - مفيش مكتبات خارجية، مفيش إعلانات، مفيش تتبع.
 - No external libraries, no ads, no tracking.
 

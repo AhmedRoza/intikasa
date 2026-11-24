@@ -35,13 +35,15 @@ body {
 
 #bottomnav {
   position:fixed; bottom:calc(10px + env(safe-area-inset-bottom)); left:12px; right:12px;
-  display:flex; align-items:center; justify-content:space-between;
-  background:rgba(13,13,19,.96); backdrop-filter: blur(14px);
+  display:flex; align-items:center; justify-content:flex-start; gap:2px;
+  overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
+  background:rgba(13,13,19,.97);
   border:1px solid var(--line); border-radius:999px;
   padding:6px;
   box-shadow:0 12px 42px rgba(0,0,0,.55);
   z-index: 20;
 }
+#bottomnav::-webkit-scrollbar { display:none; }
 .nav-btn {
   flex:0 0 auto; background:none; border:none; color:var(--dim);
   font-family:inherit; font-size:18px; display:flex; align-items:center; justify-content:center; gap:6px;
@@ -54,10 +56,112 @@ body {
   box-shadow:0 0 20px color-mix(in srgb, var(--acc) 45%, transparent); }
 .nav-btn.active span { max-width:86px; opacity:1; }
 
+/* ---------- challenges (التحديات) ---------- */
+.chal2-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:14px; }
+.chal2-card { background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+  padding:14px 10px; text-align:center; position:relative; cursor:pointer;
+  transition:transform .18s cubic-bezier(.2,.9,.3,1.3), box-shadow .25s, border-color .25s; }
+.chal2-card:active { transform:scale(.95); }
+.chal2-card img { width:84px; height:84px; object-fit:contain; display:block; margin:0 auto;
+  transition:filter .3s, opacity .3s; }
+.chal2-card .chal2-name { font-weight:800; font-size:14.5px; margin-top:8px; }
+.chal2-card .chal2-days { color:var(--dim); font-size:12px; margin-top:2px; }
+.chal2-card.locked img { filter:grayscale(1) brightness(1.25); opacity:.38; }
+.chal2-card.locked { cursor:default; }
+.chal2-lock { position:absolute; top:8px; inset-inline-start:8px; font-size:15px;
+  filter:drop-shadow(0 0 6px rgba(0,0,0,.8)); }
+.chal2-card.done { border-color:color-mix(in srgb, var(--acc) 65%, transparent);
+  box-shadow:0 0 18px color-mix(in srgb, var(--acc) 28%, transparent); }
+.chal2-card.done img { filter:drop-shadow(0 0 14px color-mix(in srgb, var(--acc) 75%, transparent));
+  animation:medalGlow 2.6s ease-in-out infinite; }
+@keyframes medalGlow {
+  0%,100% { filter:drop-shadow(0 0 10px color-mix(in srgb, var(--acc) 55%, transparent)); }
+  50% { filter:drop-shadow(0 0 22px color-mix(in srgb, var(--acc) 90%, transparent)); }
+}
+.chal2-card.done .chal2-when { color:var(--acc); font-size:11px; margin-top:3px; font-weight:700; }
+.chal2-card.running { border-color:var(--acc); box-shadow:0 0 22px color-mix(in srgb, var(--acc) 40%, transparent); }
+.chal2-card .chal2-line { height:5px; border-radius:99px; background:var(--track); overflow:hidden; margin-top:10px; }
+.chal2-card .chal2-line > div { height:100%; border-radius:99px; background:var(--acc);
+  box-shadow:0 0 10px color-mix(in srgb, var(--acc) 70%, transparent); transition:width .6s; }
+.chal2-medalring { position:relative; width:120px; height:120px; margin:0 auto; }
+.chal2-medalring img { position:absolute; inset:14px; width:92px; height:92px; object-fit:contain; }
+.chal2-medalring svg { position:absolute; inset:0; width:120px; height:120px; transform:rotate(-90deg); }
+.chal2-medalring .ring-bg { fill:none; stroke:var(--track); stroke-width:5; }
+.chal2-medalring .ring-fg { fill:none; stroke:var(--acc); stroke-width:5; stroke-linecap:round;
+  filter:drop-shadow(0 0 6px color-mix(in srgb, var(--acc) 80%, transparent)); transition:stroke-dashoffset .6s; }
+.chal2-active-card { background:var(--card); border:1px solid color-mix(in srgb, var(--acc) 55%, transparent);
+  border-radius:var(--r); padding:16px; margin-top:14px; text-align:center;
+  box-shadow:0 0 24px color-mix(in srgb, var(--acc) 22%, transparent); }
+.chal2-active-card img { width:96px; height:96px; object-fit:contain; }
+.chal2-bar { height:10px; border-radius:99px; background:var(--track); overflow:hidden; margin-top:12px; }
+.chal2-bar > div { height:100%; border-radius:99px; background:var(--acc);
+  box-shadow:0 0 12px color-mix(in srgb, var(--acc) 70%, transparent); transition:width .6s; }
+
+/* ---------- occasions (مناسبة) ---------- */
+.occ-switch-row { display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin-top:14px; padding-top:12px; border-top:1px dashed var(--line); }
+.occ-switch-row span { font-size:13px; color:var(--dim); font-weight:700; }
+.occ-switch { flex:0 0 auto; width:52px; height:30px; border-radius:99px; border:1px solid var(--line);
+  background:#1b1b24; position:relative; cursor:pointer; transition:background .3s, border-color .3s; padding:0; }
+.occ-switch span { position:absolute; top:3px; inset-inline-start:4px; width:22px; height:22px; border-radius:99px;
+  background:#555; transition:all .3s cubic-bezier(.2,.9,.3,1.3); }
+.occ-switch.on { background:color-mix(in srgb, var(--acc) 30%, #000); border-color:var(--acc); }
+.occ-switch.on span { inset-inline-start:24px; background:var(--acc);
+  box-shadow:0 0 12px color-mix(in srgb, var(--acc) 70%, transparent); }
+.occ-colors { display:flex; gap:10px; margin-top:6px; }
+.occ-dot { width:30px; height:30px; border-radius:99px; border:2px solid transparent; cursor:pointer;
+  transition:transform .18s, border-color .18s; padding:0; }
+.occ-dot.on { border-color:#fff; transform:scale(1.15); }
+.occ-card { background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+  padding:16px; margin-top:14px; position:relative; overflow:hidden;
+  border-color: color-mix(in srgb, var(--acc) 25%, transparent);
+  animation:cardFloat 4s ease-in-out infinite; }
+.occ-card .occ-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.occ-card .occ-title { font-weight:800; font-size:16px; }
+.occ-card .occ-actions { display:flex; gap:6px; }
+.occ-card .occ-actions button { background:none; border:1px solid var(--line); border-radius:10px;
+  color:var(--dim); font-size:12px; font-weight:700; padding:5px 10px; cursor:pointer; font-family:inherit; }
+.occ-cd { display:flex; align-items:baseline; justify-content:center; gap:8px; margin-top:12px; }
+.occ-cd .occ-days { font-size:42px; font-weight:900; line-height:1;
+  text-shadow:0 0 18px currentColor; }
+.occ-cd .occ-hms { font-size:16px; font-weight:800; color:var(--dim); font-variant-numeric:tabular-nums; direction:ltr; }
+.occ-cd-label { text-align:center; color:var(--dim); font-size:12px; margin-top:4px; font-weight:700; }
+.occ-map { margin-top:14px; }
+.occ-months { display:flex; gap:16px; direction:ltr; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
+.occ-months::-webkit-scrollbar { display:none; }
+.occ-month { flex:0 0 auto; }
+.occ-month-name { font-size:11px; font-weight:800; color:var(--dim); text-align:center; margin-bottom:6px; }
+.occ-mgrid { display:grid; grid-template-columns:repeat(7,14px); gap:4px; direction:ltr; }
+.occ-map .hm-grid { flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; padding-bottom:4px; }
+.hm-cell.future { background:transparent; border:1px solid #2a2a36; }
+.hm-cell.occpast { background:color-mix(in srgb, var(--oc, var(--acc)) 35%, #000); }
+.hm-cell.occday { background:var(--oc, var(--acc)); box-shadow:0 0 10px var(--oc, var(--acc)); transform:scale(1.25); }
+.occ-arrived { text-align:center; font-weight:800; font-size:15px; margin-top:12px; }
+
+/* ---------- recovery card (رحلة التعافي) ---------- */
+.reco-head { display:flex; align-items:center; justify-content:space-between; }
+.reco-x { background:none; border:none; color:var(--dim); font-size:14px; cursor:pointer; padding:4px 6px; font-family:inherit; }
+#reco-body { margin-top:10px; }
+.reco-row { display:flex; gap:10px; align-items:flex-start; padding:7px 0; }
+.reco-dot { flex:0 0 auto; width:12px; height:12px; border-radius:99px; margin-top:4px;
+  background:#2a2a36; border:1px solid #33333f; }
+.reco-row.passed .reco-dot { background:var(--acc); border-color:var(--acc);
+  box-shadow:0 0 8px color-mix(in srgb, var(--acc) 60%, transparent); }
+.reco-row.now .reco-dot { background:transparent; border:2px dashed var(--acc); animation:recoPulse 1.8s ease-in-out infinite; }
+.reco-row.advice .reco-dot { background:transparent; border:2px solid color-mix(in srgb, var(--acc) 45%, transparent); box-shadow:none; }
+.reco-row.advice .reco-txt { color:var(--txt); }
+@keyframes recoPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.35); } }
+.reco-txt { font-size:13px; color:var(--dim); line-height:1.7; }
+.reco-row.passed .reco-txt { color:var(--txt); }
+.reco-row.now .reco-txt { color:var(--txt); font-weight:700; }
+.reco-note { margin-top:8px; font-size:11px; opacity:.75; }
+
 /* ---------- shared ---------- */
 .card {
   background:var(--card); border:1px solid var(--line); border-radius:var(--r);
   padding:16px; margin-top:14px;
+  border-color: color-mix(in srgb, var(--acc) 25%, transparent);
+  animation:cardFloat 4s ease-in-out infinite;
 }
 .card-label { font-weight:700; font-size:14px; color:var(--txt); margin-bottom:10px; }
 .big-label { font-size:16px; margin-top:18px; }
@@ -92,13 +196,17 @@ body {
 }
 .text-input:focus { outline:none; border-color:var(--acc); }
 .row-label { display:block; font-size:12px; color:var(--dim); margin-top:12px; }
+.lock-img { width:120px; height:120px; object-fit:cover; border-radius:26px; margin:0 auto 12px; display:block;
+  border:2px solid var(--acc); box-shadow:0 0 18px color-mix(in srgb, var(--acc) 35%, transparent);
+  transition:opacity .26s ease; }
+.lock-img.fade { opacity:.15; }
 .hint { font-size:12.5px; color:var(--dim); line-height:1.7; margin-bottom:10px; }
 .empty { color:var(--dim); font-size:13px; padding:6px 0; }
 
 /* ---------- overlays / sheets ---------- */
 .overlay {
   position:fixed; inset:0; z-index:50;
-  background:rgba(3,3,5,.86); backdrop-filter:blur(8px);
+  background:rgba(3,3,5,.90);
   display:flex; align-items:center; justify-content:center;
   animation:fadeIn .25s;
   padding:20px;
@@ -375,7 +483,6 @@ body {
 @keyframes navBounce { 0%{transform:translateY(0)} 40%{transform:translateY(-7px)} 100%{transform:translateY(-2px)} }
 .bar { animation:barGrow .7s cubic-bezier(.2,.9,.3,1) backwards; }
 @keyframes barGrow { from{height:0 !important;} }
-.daily { animation:cardFloat 4s ease-in-out infinite; }
 @keyframes cardFloat { 0%,100%{box-shadow:0 0 0 color-mix(in srgb, var(--acc) 0%, transparent)} 50%{box-shadow:0 0 24px color-mix(in srgb, var(--acc) 18%, transparent)} }
 
 /* ---------- heatmap ---------- */
@@ -561,9 +668,16 @@ body.light .pill-row .u { color:#9a9aad; }
 .flags-dua { margin-top:6px; font-size:13.5px; color:var(--dim); line-height:1.8; padding:0 10px; }
 .relapse-meme { width:82%; max-width:280px; border-radius:18px; margin:0 auto 12px; display:block;
   border:1px solid var(--line); box-shadow:0 8px 30px rgba(0,0,0,.45); animation:memePop .5s cubic-bezier(.2,.9,.3,1.4); }
-.abajoura { width:72%; max-width:250px; border-radius:22px; margin:6px auto 10px; display:block;
+.abajoura-wrap { position:relative; width:72%; max-width:250px; margin:6px auto 10px; }
+.abajoura-wrap.hidden { display:none; }
+.abajoura { width:100%; border-radius:22px; display:block;
   border:2px solid var(--acc); box-shadow:0 0 16px color-mix(in srgb, var(--acc) 45%, transparent), 0 0 40px color-mix(in srgb, var(--acc) 18%, transparent);
   animation:memePop .5s cubic-bezier(.2,.9,.3,1.4); }
+.abajoura-ring { position:absolute; inset:-7px; width:calc(100% + 14px); height:calc(100% + 14px);
+  pointer-events:none; overflow:visible; }
+.abajoura-ring rect { fill:none; stroke:var(--acc); stroke-width:3; stroke-linecap:round;
+  filter:drop-shadow(0 0 6px color-mix(in srgb, var(--acc) 70%, transparent));
+  transition:stroke-dashoffset .95s linear; }
 @keyframes memePop { from { transform:scale(.7) rotate(-3deg); opacity:0; } to { transform:none; opacity:1; } }
 
 /* ---------- مهام: فان الشهور ---------- */
@@ -794,3 +908,4 @@ body.light .dz-chip { background:rgba(255,255,255,.94); color:#1c1c26; }
 /* لون العداد */
 .sw-auto { background:linear-gradient(135deg,#2dd4bf,#a78bfa,#f472b6); color:#04110e; font-weight:800; font-size:13px; }
 .reason-item.top .reason-name { color:var(--acc); font-weight:800; }
+.reco-src { margin-top:6px; align-self:flex-start; background:none; border:1px solid var(--acc,#2dd4bf); color:var(--acc,#2dd4bf); border-radius:10px; padding:4px 10px; font-size:11px; font-family:inherit; opacity:.85; cursor:pointer; }

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wocc_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="14dp"
+    android:background="@drawable/widget_bg">
+
+    <TextView
+        android:id="@+id/wocc_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="مناسبة"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="#2dd4bf" />
+
+    <TextView
+        android:id="@+id/wocc_days"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textSize="46sp"
+        android:textStyle="bold"
+        android:textColor="#2dd4bf" />
+
+    <TextView
+        android:id="@+id/wocc_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="يوم فاضل"
+        android:textSize="13sp"
+        android:textColor="#ccffffff" />
+</LinearLayout>

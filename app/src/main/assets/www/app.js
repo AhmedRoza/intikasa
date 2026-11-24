@@ -125,6 +125,16 @@
   function pushWidget() {
     if (!window.AndroidBridge || !AndroidBridge.saveWidget) return;
     try { AndroidBridge.saveWidget(String(state.startTs || Date.now()), String(state.accent || '#2dd4bf')); } catch (e) {}
+    try {
+      if (AndroidBridge.saveOccasions) AndroidBridge.saveOccasions(JSON.stringify(state.occasions || []));
+    } catch (e) {}
+  }
+  /* أقرب مناسبة جاية (أو آخر واحدة لو كله فات) */
+  function nearestOcc() {
+    if (!state || !state.occasions || !state.occasions.length) return null;
+    const now = Date.now();
+    const sorted = state.occasions.slice().sort((a, b) => a.ts - b.ts);
+    return sorted.find((o) => o.ts >= now) || sorted[sorted.length - 1];
   }
   function load() {
     try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) { state = null; }
@@ -152,6 +162,20 @@
       state.phrases = state.phrases || [];
       DEFAULT_PHRASES.forEach((p) => { if (!state.phrases.includes(p)) state.phrases.push(p); });
       state.challenge = state.challenge || null;
+      state.updFreq = state.updFreq || 'manual';
+      state.ch2 = state.ch2 || { active: null, start: 0, done: {} };
+      state.ch2.done = state.ch2.done || {};
+      state.occasions = state.occasions || [];
+      /* نقل المناسبة القديمة الواحدة للقائمة الجديدة من غير ما المستخدم يعمل حاجة */
+      if (state.event && state.event.ts) {
+        if (!state.occasions.some((o) => o.ts === state.event.ts && o.name === state.event.name)) {
+          state.occasions.push({ id: 'ev' + state.event.ts, name: state.event.name, ts: state.event.ts, color: '#2dd4bf' });
+        }
+        state.event = null;
+        state.occOn = true;
+      }
+      state.occOn = !!state.occOn;
+      if (state.hideRecovery === undefined) state.hideRecovery = false;
       state.devThanks = !!state.devThanks;
       state.lastReminderMonth = state.lastReminderMonth || '';
       return true;
@@ -163,7 +187,7 @@
   /* لون العداد ممكن يبقى مختلف عن لون التطبيق؛ فاضي = نفس لون التطبيق */
   function counterAccent() { return state.counterAccent || state.accent || '#2dd4bf'; }
   function applyAccent() {
-    document.documentElement.style.setProperty('--acc', state.accent);
+    document.documentElement.style.setProperty('--acc', state.accent || '#2dd4bf');
     const c = $('counter');
     if (c) c.style.setProperty('--acc', counterAccent());
   }
@@ -410,10 +434,23 @@
     if (!state) return;
     /* ميم الاباجورة: ٣ دقايق مكان العداد بعد الانتكاسة */
     const abOn = (state.abajouraUntil || 0) > Date.now();
-    $('abajoura').classList.toggle('hidden', !abOn);
+    $('abajoura-wrap').classList.toggle('hidden', !abOn);
     $('counter').classList.toggle('hidden', abOn);
     $('style-dots').classList.toggle('hidden', abOn);
-    if (abOn) return;
+    if (abOn) {
+      /* الخط اللي بيلف حوالين الاباجورة وبيقل مع الوقت */
+      const wrap = $('abajoura-wrap'), rect = $('abajoura-ring-rect');
+      const W = wrap.clientWidth, H = wrap.clientHeight;
+      if (W && H) {
+        rect.setAttribute('x', 8.5); rect.setAttribute('y', 8.5);
+        rect.setAttribute('width', W - 3); rect.setAttribute('height', H - 3);
+        rect.setAttribute('rx', 26);
+        const frac = Math.max(0, Math.min(1, (state.abajouraUntil - Date.now()) / (3 * 60e3)));
+        rect.style.strokeDasharray = '100';
+        rect.style.strokeDashoffset = String(100 - frac * 100);
+      }
+      return;
+    }
     if (!cRefs || cRefs.style !== state.style) buildCounter();
     const now = Date.now();
     const secs = Math.max(0, Math.floor((now - state.startTs) / 1000));
@@ -472,13 +509,15 @@
   }
 
   /* ---------- pages ---------- */
-  const PAGES = { home: 'page-home', calendar: 'page-calendar', tasks: 'page-tasks', stats: 'page-stats', tree: 'page-tree', ach: 'page-ach', profile: 'page-profile', settings: 'page-settings' };
+  const PAGES = { home: 'page-home', calendar: 'page-calendar', tasks: 'page-tasks', occ: 'page-occ', stats: 'page-stats', tree: 'page-tree', chal: 'page-chal', ach: 'page-ach', profile: 'page-profile', settings: 'page-settings' };
   function showPage(p) {
     page = p;
     for (const k in PAGES) $(PAGES[k]).classList.toggle('hidden', k !== p);
     document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.page === p));
     if (p === 'calendar') renderCalendar();
     if (p === 'stats') renderStats();
+    if (p === 'occ') renderOcc();
+    if (p === 'chal') renderChal2();
     if (p === 'ach') renderAch();
     if (p === 'tree') renderTree();
     if (p === 'profile') renderProfile();
@@ -1882,19 +1921,290 @@
   }
 
   function renderEventSettings() {
-    $('event-name').value = state.event ? state.event.name : '';
-    if (state.event) {
-      const d = new Date(state.event.ts);
+    const ev = state.occasions.find((o) => o.id === 'ev-settings');
+    $('event-name').value = ev ? ev.name : '';
+    if (ev) {
+      const d = new Date(ev.ts);
       $('event-date').value = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
     } else {
       $('event-date').value = '';
     }
+    $('occ-toggle').classList.toggle('on', !!state.occOn);
+    $('reco-toggle').classList.toggle('on', !state.hideRecovery);
+  }
+
+  /* ---------- كارت رحلة التعافي ---------- */
+  /* محتوى تعليمي حذر من مصادر طبية موثوقة. ممنوع تعميم أرقام على حالات مختلفة عن المصدر:
+     سجاير فقط (NHS) — مش فيب ولا شيشة؛ السكر والنوم بمدى واضح من غير وعود بمواعيد. */
+  const RECOVERY = {
+    smoke: {
+      keys: ['سجاير', 'سيجارة'],
+      sub: 'تحسنات ذكرتها NHS للإقلاع عن السجاير تحديدًا — توقيت تقريبي وبيختلف من شخص للتاني:',
+      src: { n: 'NHS', u: 'https://www.nhs.uk/better-health/quit-smoking/ready-to-quit-smoking/what-could-happen-when-you-quit-smoking/' },
+      stages: [
+        { t: 20 * 6e4, x: 'بعد ٢٠ دقيقة: ممكن نبضك يبدأ يرجع لمعدله الطبيعي' },
+        { t: 8 * 36e5, x: 'بعد ٨ ساعات: الأكسجين بيتحسن وأول أكسيد الكربون في الدم بيقل للنص' },
+        { t: 2 * DAY, x: 'بعد يومين: أول أكسيد الكربون بيوصل لمستوى غير المدخنين، وحاستي الشم والتذوق بيتحسنوا' },
+        { t: 3 * DAY, x: 'بعد ٣ أيام: التنفس ممكن يبقى أسهل والطاقة تزيد' },
+        { t: 14 * DAY, x: 'من ٢ لـ ١٢ أسبوع: الدورة الدموية بتتحسن' },
+        { t: 90 * DAY, x: 'من ٣ لـ ٩ شهور: الكحة وصعوبة النفس بتقل ووظيفة الرئة ممكن تتحسن لحد ١٠٪' },
+        { t: 365 * DAY, x: 'بعد سنة: خطر الأزمة القلبية بيقل للنص مقارنة بحد لسه بيدخن' },
+      ],
+    },
+    sugar: {
+      keys: ['سكر', 'حلويات', 'شوكولاتة', 'شوكولاته', 'حلو'],
+      timed: false,
+      sub: 'نصايح عامة عن تقليل السكر من مصدر طبي موثوق — مش مراحل بمواعيد:',
+      src: { n: 'Verywell Health', u: 'https://www.verywellhealth.com/sugar-withdrawal-6502380' },
+      stages: [
+        { x: 'في أول أيام التقليل ممكن تظهر أعراض انسحاب زي تعب أو عصبية أو اشتهاء — شدتها ومدتها بتختلف من شخص للتاني' },
+        { x: 'حسب المصدر الأعراض ممكن تستمر من أيام لأسابيع، ومفيش جدول ثابت ينطبق على الكل' },
+        { x: 'لو الأعراض صعبة عليك ومش بتتحسن، استشارة مختص أو دكتور هي الأحسن' },
+      ],
+    },
+    sleep: {
+      keys: ['سهر', 'نوم'],
+      timed: false,
+      sub: 'نصايح عامة عن تعويض دَين النوم من مصدر طبي موثوق — مش مراحل بمواعيد:',
+      src: { n: 'Sleep Foundation', u: 'https://www.sleepfoundation.org/how-sleep-works/sleep-debt-and-catch-up-sleep' },
+      stages: [
+        { x: 'القيلولة القصيرة أو النوم زيادة في الأجازة ممكن يخففوا التعب، بس حسب المصدر مش بيعوّضوا دَين النوم كله' },
+        { x: 'تعويض النوم المتراكم بياخد أيام، مش ليلة واحدة — زوّد نومك بالتدريج (١٥-٣٠ دقيقة كل مرة)' },
+        { x: 'ثبات مواعيد النوم والصحيان كل يوم، حتى في أجازة الأسبوع، مهم لإعادة ضبط الساعة البيولوجية' },
+        { x: 'لو قلة النوم مأثرة على يومك أو مش قادر تتعافى، كلم دكتور' },
+      ],
+    },
+    generic: {
+      keys: [],
+      sub: 'محطات في رحلتك (أرقام استمرار بس، مش معلومات طبية):',
+      src: null,
+      stages: [
+        { t: DAY, x: '٢٤ ساعة كاملة' },
+        { t: 3 * DAY, x: '٣ أيام متواصلين' },
+        { t: 7 * DAY, x: 'أسبوع كامل' },
+        { t: 14 * DAY, x: 'أسبوعين كاملين' },
+        { t: 30 * DAY, x: 'شهر كامل' },
+        { t: 90 * DAY, x: '٩٠ يوم' },
+      ],
+    },
+  };
+  function recoFor() {
+    const h = ((state.habit && state.habit.name) || '').toLowerCase();
+    for (const k of ['smoke', 'sugar', 'sleep']) {
+      if (RECOVERY[k].keys.some((w) => h.includes(w))) return RECOVERY[k];
+    }
+    return RECOVERY.generic;
+  }
+  function renderRecovery() {
+    const card = $('reco-card');
+    if (!card) return;
+    if (state.hideRecovery) { card.classList.add('hidden'); return; }
+    const r = recoFor();
+    const elapsed = Date.now() - (state.startTs || Date.now());
+    card.classList.remove('hidden');
+    $('reco-sub').textContent = r.sub;
+    $('reco-note').textContent = r.src ? (r.timed === false ? 'محتوى تعليمي مبسط مش بديل عن استشارة طبية.' : 'محتوى تعليمي مبسط مش بديل عن استشارة طبية، وأي توقيت مذكور تقريبي وبيختلف من شخص للتاني.') : '';
+    const body = $('reco-body');
+    body.innerHTML = '';
+    const timed = r.timed !== false;
+    let nowMarked = false;
+    r.stages.forEach((s) => {
+      const row = el('div', 'reco-row');
+      if (timed) {
+        const passed = elapsed >= s.t;
+        if (passed) row.classList.add('passed');
+        else if (!nowMarked) { row.classList.add('now'); nowMarked = true; }
+      } else {
+        row.classList.add('advice');
+      }
+      row.appendChild(el('div', 'reco-dot'));
+      row.appendChild(el('div', 'reco-txt', s.x));
+      body.appendChild(row);
+    });
+    if (r.src) {
+      const link = el('button', 'reco-src', 'المصدر: ' + r.src.n + ' ⤢');
+      link.onclick = () => { try { if (window.AndroidBridge && AndroidBridge.openUrl) AndroidBridge.openUrl(r.src.u); } catch (e) {} };
+      body.appendChild(link);
+    }
+  }
+
+  function occNavSync() {
+    $('nav-occ').classList.toggle('hidden', !state.occOn);
+  }
+
+  /* ---------- قسم مناسبة ---------- */
+  const OCC_COLORS = ['#2dd4bf', '#f472b6', '#a78bfa', '#fbbf24', '#60a5fa'];
+  let occEditId = null;
+  let occColor = OCC_COLORS[0];
+
+  function renderOccColors() {
+    const box = $('occ-colors');
+    box.innerHTML = '';
+    OCC_COLORS.forEach((c) => {
+      const b = el('button', 'occ-dot' + (occColor === c ? ' on' : ''));
+      b.style.background = c;
+      b.onclick = () => { occColor = c; renderOccColors(); };
+      box.appendChild(b);
+    });
+  }
+
+  function occMapBuild(card, occ) {
+    /* خريطة شهور: كل شهر كتلة لوحده باسمه وأيامه الحقيقية، من الشهر الحالي لشهر المناسبة */
+    const map = el('div', 'occ-map');
+    const wrap = el('div', 'occ-months');
+    wrap.style.setProperty('--oc', occ.color || 'var(--acc)');
+    const now = Date.now();
+    const today0 = startOfDay(now);
+    const d0 = new Date(today0);
+    const od = new Date(occ.ts);
+    let y = d0.getFullYear(), m = d0.getMonth();
+    const endY = od.getFullYear(), endM = od.getMonth();
+    while (y < endY || (y === endY && m <= endM)) {
+      const block = el('div', 'occ-month');
+      block.appendChild(el('div', 'occ-month-name', MONTHS[m] + (y !== d0.getFullYear() ? ' ' + y : '')));
+      const grid = el('div', 'occ-mgrid');
+      const daysIn = new Date(y, m + 1, 0).getDate();
+      const off = (new Date(y, m, 1).getDay() + 1) % 7; // السبت أول الأسبوع زي خريطة العادات
+      for (let i = 0; i < off; i++) {
+        const blank = el('div', 'hm-cell');
+        blank.style.visibility = 'hidden';
+        grid.appendChild(blank);
+      }
+      for (let day = 1; day <= daysIn; day++) {
+        const ts = new Date(y, m, day).getTime();
+        const cell = el('div', 'hm-cell');
+        if (dayKey(ts) === dayKey(occ.ts)) cell.classList.add('occday');
+        else if (ts < today0) cell.classList.add('occpast');
+        else if (dayKey(ts) === dayKey(now)) cell.classList.add('today');
+        else cell.classList.add('future');
+        grid.appendChild(cell);
+      }
+      block.appendChild(grid);
+      wrap.appendChild(block);
+      m++; if (m > 11) { m = 0; y++; }
+    }
+    map.appendChild(wrap);
+    card.appendChild(map);
+  }
+
+  function occCdUpdate() {
+    if (page !== 'occ') return;
+    document.querySelectorAll('.occ-card').forEach((card) => {
+      const ts = +card.dataset.ts;
+      const diff = ts - Date.now();
+      const daysEl = card.querySelector('.occ-days');
+      const hmsEl = card.querySelector('.occ-hms');
+      if (!daysEl || !hmsEl) return;
+      if (diff <= 0) { daysEl.textContent = '🎉'; hmsEl.textContent = ''; return; }
+      const dd = Math.floor(diff / DAY);
+      const hh = Math.floor((diff % DAY) / 36e5);
+      const mm = Math.floor((diff % 36e5) / 6e4);
+      const ss = Math.floor((diff % 6e4) / 1e3);
+      daysEl.textContent = dd;
+      hmsEl.textContent = pad2(hh) + ':' + pad2(mm) + ':' + pad2(ss);
+    });
+  }
+
+  function renderOcc() {
+    const list = $('occ-list');
+    if (!list) return;
+    renderOccColors();
+    $('occ-add').textContent = occEditId ? 'حفظ التعديل ✓' : 'إضافة المناسبة ➕';
+    list.innerHTML = '';
+    if (!state.occasions.length) {
+      list.appendChild(el('div', 'hint', 'لسه مفيش مناسبات.. ضيف أول واحدة فوق 👆'));
+      return;
+    }
+    const sorted = state.occasions.slice().sort((a, b) => a.ts - b.ts);
+    sorted.forEach((occ) => {
+      const card = el('div', 'occ-card');
+      card.dataset.ts = occ.ts;
+      card.style.setProperty('--oc', occ.color || 'var(--acc)');
+      card.style.borderColor = 'color-mix(in srgb, ' + (occ.color || '#2dd4bf') + ' 45%, transparent)';
+      const d = new Date(occ.ts);
+      const head = el('div', 'occ-head');
+      head.appendChild(el('div', 'occ-title', esc(occ.name)));
+      const acts = el('div', 'occ-actions');
+      const eb = el('button', '', 'تعديل');
+      eb.onclick = () => {
+        occEditId = occ.id; occColor = occ.color || OCC_COLORS[0];
+        $('occ-name').value = occ.name;
+        $('occ-date').value = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+        renderOcc();
+        $('occ-name').focus();
+      };
+      const db = el('button', '', 'مسح');
+      db.onclick = () => {
+        if (db.dataset.arm) {
+          state.occasions = state.occasions.filter((o) => o.id !== occ.id);
+          if (occEditId === occ.id) occEditId = null;
+          save(); renderOcc(); renderEventCard();
+          toast('اتمسحت المناسبة');
+        } else { db.dataset.arm = '1'; db.textContent = 'متأكد؟'; }
+      };
+      acts.appendChild(eb); acts.appendChild(db);
+      head.appendChild(acts);
+      card.appendChild(head);
+      card.appendChild(el('div', 'hint', d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear()));
+      const cd = el('div', 'occ-cd');
+      cd.style.color = occ.color || 'var(--acc)';
+      cd.innerHTML = '<div class="occ-days">0</div><div class="occ-hms">00:00:00</div>';
+      card.appendChild(cd);
+      const cdLabel = occ.ts > Date.now() ? 'يوم على ' + esc(occ.name) : 'المناسبة دخلت! 🎉';
+      card.appendChild(el('div', 'occ-cd-label', cdLabel));
+      occMapBuild(card, occ);
+      list.appendChild(card);
+    });
+    occCdUpdate();
+  }
+
+  function bindOcc() {
+    $('occ-add').onclick = () => {
+      const nm = $('occ-name').value.trim();
+      const dv = new Date($('occ-date').value + 'T00:00:00').getTime();
+      if (!nm || isNaN(dv)) { toast('اكتب اسم المناسبة وتاريخها'); return; }
+      if (occEditId) {
+        const o = state.occasions.find((x) => x.id === occEditId);
+        if (o) { o.name = nm; o.ts = dv; o.color = occColor; }
+        occEditId = null;
+        toast('اتعدلت المناسبة ✓');
+      } else {
+        state.occasions.push({ id: 'oc' + Date.now(), name: nm, ts: dv, color: occColor });
+        toast('اتضافت المناسبة ⏳');
+      }
+      $('occ-name').value = ''; $('occ-date').value = '';
+      save(); renderOcc(); renderEventCard();
+    };
+    $('occ-toggle').onclick = () => {
+      state.occOn = !state.occOn;
+      save(); renderEventSettings(); occNavSync();
+      toast(state.occOn ? 'قسم مناسبة اتفعل ⏳ بص تحت في الشريط' : 'قسم مناسبة اتقفل');
+    };
+    setInterval(occCdUpdate, 1000);
+    $('reco-toggle').onclick = () => {
+      state.hideRecovery = !state.hideRecovery;
+      save(); renderEventSettings(); renderRecovery();
+    };
+    $('reco-hide').onclick = () => {
+      state.hideRecovery = true;
+      save(); renderRecovery();
+      toast('اتخفى.. تقدر ترجعه من الإعدادات');
+    };
   }
 
   const ICON_OPTS = [
     { id: 'main', img: 'img/icon-main.png', label: 'الأساسية' },
     { id: 'cap', img: 'img/icon-cap.png', label: 'الشخصية' },
     { id: 'stick', img: 'img/icon-stick.png', label: 'الميم' },
+    { id: 'logo1', img: 'img/icon-logo1.png', label: 'لوجو ١' },
+    { id: 'logo2', img: 'img/icon-logo2.png', label: 'لوجو ٢' },
+    { id: 'logo3', img: 'img/icon-logo3.png', label: 'لوجو ٣' },
+    { id: 'logo4', img: 'img/icon-logo4.png', label: 'لوجو ٤' },
+    { id: 'logo5', img: 'img/icon-logo5.png', label: 'لوجو ٥' },
+    { id: 'logo6', img: 'img/icon-logo6.png', label: 'لوجو ٦' },
+    { id: 'logo7', img: 'img/icon-logo7.png', label: 'لوجو ٧' },
+    { id: 'logo8', img: 'img/icon-logo8.png', label: 'لوجو ٨' },
+    { id: 'logo9', img: 'img/icon-logo9.png', label: 'لوجو ٩' },
   ];
   function renderIconPicker() {
     const ip = $('icon-pick');
@@ -1952,19 +2262,20 @@
     if (sn) sn.textContent = nm;
   }
 
-  /* عدّاد المناسبة على الرئيسية */
+  /* عدّاد المناسبة على الرئيسية: أقرب مناسبة من القسم الجديد */
   function renderEventCard() {
     const card = $('event-card');
-    if (!state.event || !state.event.ts) { card.classList.add('hidden'); return; }
-    const left = Math.ceil((state.event.ts - Date.now()) / DAY);
+    const ev = nearestOcc();
+    if (!ev || !ev.ts) { card.classList.add('hidden'); return; }
+    const left = Math.ceil((ev.ts - Date.now()) / DAY);
     if (left < 0) { card.classList.add('hidden'); return; }
     card.classList.remove('hidden');
-    const d = new Date(state.event.ts);
+    const d = new Date(ev.ts);
     $('event-body').innerHTML = '';
     const big = el('div', 'event-big');
     big.textContent = left === 0 ? 'النهاردة! 🎉' : 'باقي ' + left + ' ' + U.day(left);
     $('event-body').appendChild(big);
-    $('event-body').appendChild(el('div', 'event-sub', 'على ' + esc(state.event.name) + ' — ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear()));
+    $('event-body').appendChild(el('div', 'event-sub', 'على ' + esc(ev.name) + ' — ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear()));
   }
 
   function renderStylePicker() {
@@ -2081,11 +2392,30 @@
 
   /* ---------- PIN ---------- */
   let lockBuf = '', lockMode = 'unlock', lockFirst = '';
+  const LOCK_IMGS = ['img/lock-1.jpg', 'img/lock-2.jpg', 'img/lock-3.jpg'];
+  let lockImgIdx = 0, lockImgTimer = null;
+  function startPinSetup() { openLock('setup'); }
+  function lockImgsStart() {
+    lockImgIdx = 0;
+    const im = $('lock-img');
+    if (im) im.src = LOCK_IMGS[0];
+    clearInterval(lockImgTimer);
+    lockImgTimer = setInterval(() => {
+      lockImgIdx = (lockImgIdx + 1) % LOCK_IMGS.length;
+      if (im) {
+        im.classList.add('fade');
+        setTimeout(() => { im.src = LOCK_IMGS[lockImgIdx]; im.classList.remove('fade'); }, 260);
+      }
+    }, 3500);
+  }
+  function lockImgsStop() { clearInterval(lockImgTimer); lockImgTimer = null; }
+  function closeLock() { $('lock').classList.add('hidden'); lockImgsStop(); }
   function openLock(mode) {
     lockMode = mode; lockBuf = ''; lockFirst = '';
     $('lock-msg').textContent = mode === 'setup' ? 'اختار ٤ أرقام' : '';
     $('lock').classList.remove('hidden');
     drawLock();
+    lockImgsStart();
     const bioOk = mode === 'unlock' && state.bio && window.AndroidBridge && AndroidBridge.hasBiometric && AndroidBridge.hasBiometric();
     $('lock-bio').classList.toggle('hidden', !bioOk);
     if (bioOk) setTimeout(() => AndroidBridge.promptBiometric(), 500);
@@ -2110,7 +2440,7 @@
     drawLock();
     if (lockBuf.length < 4) return;
     if (lockMode === 'unlock') {
-      if (lockBuf === state.pin) { $('lock').classList.add('hidden'); }
+      if (lockBuf === state.pin) { closeLock(); }
       else {
         $('lock-msg').textContent = 'رقم غلط، حاول تاني';
         $('lock-dots').classList.add('shake');
@@ -2125,7 +2455,7 @@
     } else {
       if (lockBuf === lockFirst) {
         state.pin = lockBuf; save();
-        $('lock').classList.add('hidden');
+        closeLock();
         $('lock-msg').style.color = '';
         renderPinArea();
         toast('القفل اتفعّل 🔐');
@@ -2327,7 +2657,9 @@
         hardDays: [],
         medalStyle: 'neon',
         seenMedals: 0, batman3: false, challenge: null, devThanks: false, lastReminderMonth: '',
-        counterAccent: '', abajouraUntil: 0, topPhotoIdx: 0, wchallenge: null, wchWins: 0,
+        ch2: { active: null, start: 0, done: {} },
+        occOn: false, occasions: [], hideRecovery: false,
+        counterAccent: '', abajouraUntil: 0, topPhotoIdx: 0, wchallenge: null, wchWins: 0, updFreq: 'manual', updLast: null,
         pwCount: 0, pwRunStart: 0, pwRunAwards: -1,
         event: null,
         stealth: false, icon: 'main',
@@ -2355,6 +2687,71 @@
     for (const [min, arr] of PHRASE_STAGES) if (streakD >= min) bank = arr;
     const pool = state.phrases.concat(bank);
     $('daily-text').textContent = pool[doy % pool.length];
+  }
+
+  /* ---------- تحديث التطبيق (بحث فقط — مفيش تحميل) ---------- */
+  const APP_VERSION = '1.11';
+  const UPD_URL = 'https://api.github.com/repos/AhmedRoza/intikasa/releases/latest';
+  const UPD_INTERVALS = { day: 864e5, week: 7 * 864e5, month: 30 * 864e5 };
+  function cmpVer(a, b) {
+    const pa = String(a).replace(/^v/, '').split('.').map(Number), pb = String(b).replace(/^v/, '').split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const x = pa[i] || 0, y = pb[i] || 0;
+      if (x > y) return 1; if (x < y) return -1;
+    }
+    return 0;
+  }
+  function applyUpdOk(latest, manual) {
+    const c = latest ? cmpVer(latest, APP_VERSION) : 0;
+    const isNew = c > 0, ahead = c < 0;
+    state.updLast = { ts: Date.now(), latest, isNew, ahead };
+    save(); renderUpdStatus();
+    if (isNew) toast('⬆️ فيه نسخة جديدة (' + latest + ') على GitHub');
+    else if (manual) toast(ahead ? 'نسختك أحدث من المنشورة على GitHub 👌' : 'انت على آخر نسخة ✅');
+  }
+  function applyUpdFail(manual) {
+    if (!manual) return; // التلقائي يفشل بهدوء من غير ما يزعج
+    toast('التطبيق مقدرش يوصل لمصدر التحديث — اتأكد من النت وجرب تاني');
+    const st = $('upd-status');
+    if (st) st.textContent = 'آخر محاولة فشلت: مصدر التحديث مش متاح دلوقتي.';
+  }
+  let updPending = false;
+  async function checkForUpdate(manual) {
+    const st = $('upd-status');
+    if (manual && st) st.textContent = 'بيدوّر على آخر نسخة…';
+    /* على الموبايل: الفحص بيتم من الكود الأصلي (الويب فيو مبيتصلش بالنت) */
+    if (window.AndroidBridge && AndroidBridge.checkUpdate) {
+      if (updPending) return;
+      updPending = true;
+      let settled = false;
+      window.__updResult = (res) => {
+        settled = true; updPending = false;
+        if (res && res.ok && res.tag) applyUpdOk(String(res.tag).replace(/^v/, ''), manual);
+        else applyUpdFail(manual);
+      };
+      setTimeout(() => { if (!settled) { updPending = false; applyUpdFail(manual); } }, 16000);
+      try { AndroidBridge.checkUpdate(); } catch (e) { updPending = false; applyUpdFail(manual); }
+      return;
+    }
+    /* fallback للمحاكاة والتطوير بس */
+    try {
+      const ctl = new AbortController();
+      const to = setTimeout(() => ctl.abort(), 12000);
+      const r = await fetch(UPD_URL, { signal: ctl.signal, headers: { Accept: 'application/vnd.github+json' } });
+      clearTimeout(to);
+      if (!r.ok) throw new Error('http');
+      const j = await r.json();
+      applyUpdOk(String(j.tag_name || '').replace(/^v/, ''), manual);
+    } catch (e) {
+      applyUpdFail(manual);
+    }
+  }
+  function renderUpdStatus() {
+    const st = $('upd-status'); if (!st || !state) return;
+    const u = state.updLast;
+    if (!u || !u.ts) { st.textContent = 'لسه مفيش بحث عن تحديثات.'; return; }
+    const d = new Date(u.ts);
+    st.textContent = 'آخر بحث: ' + d.toLocaleDateString('ar-EG') + ' — ' + (u.isNew ? 'فيه نسخة جديدة ' + u.latest + ' على GitHub ⬆️' : (u.ahead ? 'نسختك أحدث من المنشورة (آخر منشورة: ' + u.latest + ')' : 'انت على آخر نسخة ✅'));
   }
 
   /* ---------- hero ---------- */
@@ -2440,7 +2837,7 @@
 
   /* ---------- boot ---------- */
   /* الصور اللي فوق العداد: بتتبدل بالترتيب مع كل فتحة للتطبيق — ضيف صور جديدة للقايمة هنا */
-  const TOP_PHOTOS = ['img/meme-top.jpg', 'img/top-1.jpg', 'img/top-2.jpg', 'img/top-3.jpg'];
+  const TOP_PHOTOS = ['img/meme-top.jpg', 'img/top-1.jpg', 'img/top-2.jpg'];
   function boot() {
     $('app').classList.remove('hidden');
     applyStealth();
@@ -2451,6 +2848,7 @@
     renderHero();
     renderDaily();
     renderEventCard();
+    renderRecovery();
     renderChallenge();
     renderWChallenge();
     buildCounter();
@@ -2463,8 +2861,27 @@
     checkPerfect();
     checkDevThanks();
     if (state.pin) openLock('unlock');
+    /* كارت التحديث في الإعدادات */
+    $('upd-freq').value = state.updFreq || 'manual';
+    $('upd-freq').onchange = () => { state.updFreq = $('upd-freq').value; save(); };
+    $('btn-upd').onclick = () => checkForUpdate(true);
+    renderUpdStatus();
+    /* بحث تلقائي عن تحديث حسب الإعداد (يومي/أسبوعي/شهري، واليدوي مبيعملش حاجة) */
+    if ((state.updFreq || 'manual') !== 'manual') {
+      const iv = UPD_INTERVALS[state.updFreq];
+      if (!state.updLast || !state.updLast.ts || Date.now() - state.updLast.ts > iv) checkForUpdate(false);
+    }
     setTimeout(goStudyShow, GO_STUDY_DELAY);
   }
+
+  /* القفل كل ما التطبيق يرجع من الخلفية */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    if (state && state.pin && $('lock').classList.contains('hidden')) openLock('unlock');
+  });
+  window.__intikasaResume = () => {
+    if (state && state.pin && $('lock').classList.contains('hidden')) openLock('unlock');
+  };
 
   /* ---------- GO STUDY: تذكيرة لو التطبيق فضل مفتوح ٥ دقايق ---------- */
   // بتظهر مرة واحدة في كل جلسة (كل فتحة للتطبيق)
@@ -2512,12 +2929,13 @@
       const nm = $('event-name').value.trim();
       const dv = new Date($('event-date').value + 'T00:00:00').getTime();
       if (!nm || isNaN(dv)) { toast('اكتب اسم المناسبة وتاريخها'); return; }
-      state.event = { name: nm, ts: dv };
+      state.occasions = state.occasions.filter((o) => o.id !== 'ev-settings');
+      state.occasions.push({ id: 'ev-settings', name: nm, ts: dv, color: '#2dd4bf' });
       save(); renderEventCard();
       toast('العداد التنازلي اتفعل ⏳');
     };
     $('event-clear').onclick = () => {
-      state.event = null;
+      state.occasions = state.occasions.filter((o) => o.id !== 'ev-settings');
       save(); renderEventSettings(); renderEventCard();
       toast('اتمسحت المناسبة');
     };
@@ -2612,7 +3030,7 @@
       location.reload();
     };
     setInterval(() => { if (page === 'home') tickCounter(false); }, 250);
-    setInterval(() => { if (!state) return; checkMedals(false); checkChallenge(); checkWChallenge(); checkPerfect(); checkDevThanks(); }, 30000);
+    setInterval(() => { if (!state) return; checkMedals(false); checkChallenge(); checkCh2(); checkWChallenge(); checkPerfect(); checkDevThanks(); }, 30000);
   }
 
   /* نتيجة البصمة من النظام */
@@ -2819,6 +3237,102 @@
       if (page === 'home') renderChallenge();
       if (page === 'ach') renderAch();
     }
+  }
+
+  /* ---------- التحديات (١٠ تحديات بأوسمة خاصة) ---------- */
+  const CH2 = [
+    { id: 'groot',   name: 'البداية',    days: 3,   img: 'img/medal-08.png' },
+    { id: 'spark',   name: 'الشرارة',    days: 7,   img: 'img/medal-01.png' },
+    { id: 'knot',    name: 'العزيمة',    days: 14,  img: 'img/medal-10.png' },
+    { id: 'dragon',  name: 'التنين',     days: 21,  img: 'img/medal-06.png' },
+    { id: 'wizard',  name: 'الساحر',     days: 30,  img: 'img/medal-02.png' },
+    { id: 'viking',  name: 'الفايكنج',   days: 45,  img: 'img/medal-07.png' },
+    { id: 'beast',   name: 'الوحش',      days: 60,  img: 'img/medal-04.png' },
+    { id: 'warrior', name: 'المحارب',    days: 90,  img: 'img/medal-09.png' },
+    { id: 'emperor', name: 'الإمبراطور', days: 120, img: 'img/medal-03.png' },
+    { id: 'legend',  name: 'الأسطورة',   days: 180, img: 'img/medal-05.png' },
+  ];
+  const ch2Def = (id) => CH2.find((c) => c.id === id);
+
+  function checkCh2() {
+    if (!state || !state.ch2 || !state.ch2.active) return;
+    const c = ch2Def(state.ch2.active);
+    if (!c) { state.ch2.active = null; return; }
+    const s = state.ch2;
+    if (state.startTs > s.start) { // انتكاسة بعد بداية التحدي: التحدي الحالي بيتصفّر ويبدأ من الأول (قرار أحمد)
+      s.start = state.startTs; save();
+      if (page === 'chal') renderChal2();
+      return;
+    }
+    if (Date.now() - s.start >= c.days * DAY) {
+      s.done[c.id] = Date.now(); s.active = null; s.start = 0; save();
+      if (navigator.vibrate) navigator.vibrate([150, 80, 150, 80, 400]);
+      toast('🏆 كسبت تحدي ' + c.name + '! الوسام اتفتح');
+      if (page === 'chal') renderChal2();
+    }
+  }
+
+  function renderChal2() {
+    const grid = $('chal2-grid');
+    const actBox = $('chal2-active');
+    if (!grid || !actBox) return;
+    checkCh2();
+    const now = Date.now();
+    const s = state.ch2;
+    actBox.innerHTML = '';
+    grid.innerHTML = '';
+    const active = s.active ? ch2Def(s.active) : null;
+    if (active && state.startTs <= s.start) {
+      const frac = Math.min(1, (now - s.start) / (active.days * DAY));
+      const day = Math.min(active.days, Math.floor((now - s.start) / DAY) + 1);
+      const left = active.days - day;
+      const card = el('div', 'chal2-active-card');
+      card.innerHTML =
+        '<div class="chal2-medalring"><svg viewBox="0 0 120 120">' +
+        '<circle class="ring-bg" cx="60" cy="60" r="55"/>' +
+        '<circle class="ring-fg" cx="60" cy="60" r="55" pathLength="100" stroke-dasharray="100" stroke-dashoffset="' + (100 - frac * 100).toFixed(1) + '"/>' +
+        '</svg><img src="' + active.img + '" alt=""></div>' +
+        '<div style="font-weight:800;font-size:16px;margin-top:6px">تحدي ' + active.name + '</div>' +
+        '<div class="sub" style="margin-top:4px">اليوم <b>' + day + '</b> من ' + active.days + (left > 0 ? ' — فاضل ' + left + ' ' + U.day(left) : ' — آخر يوم! 🔥') + '</div>' +
+        '<div class="chal2-bar"><div style="width:' + (frac * 100).toFixed(1) + '%"></div></div>';
+      const cancel = el('button', 'btn ghost', 'إلغاء التحدي');
+      cancel.style.marginTop = '12px';
+      cancel.onclick = () => {
+        if (cancel.dataset.arm) { s.active = null; s.start = 0; save(); renderChal2(); toast('التحدي اتلغى'); }
+        else { cancel.dataset.arm = '1'; cancel.textContent = 'متأكد؟ اضغط تاني للإلغاء'; }
+      };
+      card.appendChild(cancel);
+      actBox.appendChild(card);
+    }
+    CH2.forEach((c) => {
+      const card = el('div', 'chal2-card');
+      const done = s.done[c.id];
+      const running = s.active === c.id && state.startTs <= s.start;
+      let cls = '';
+      if (done) cls = 'done'; else if (running) cls = 'running'; else cls = 'locked';
+      card.classList.add(cls);
+      let html = '<img src="' + c.img + '" alt="">';
+      if (!done && !running) html += '<div class="chal2-lock"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#cfd2dc" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2.5" fill="rgba(10,10,14,.55)"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>';
+      html += '<div class="chal2-name">' + c.name + '</div>';
+      html += '<div class="chal2-days">' + c.days + ' ' + U.day(c.days) + ' متواصلين</div>';
+      if (done) {
+        const d = new Date(done);
+        html += '<div class="chal2-when">كسبته ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' 🏆</div>';
+      } else if (running) {
+        const frac = Math.min(1, (now - s.start) / (c.days * DAY));
+        html += '<div class="chal2-when">شغال دلوقتي 🔥</div>';
+        html += '<div class="chal2-line"><div style="width:' + (frac * 100).toFixed(1) + '%"></div></div>';
+      }
+      card.innerHTML = html;
+      if (!done && !running) {
+        card.onclick = () => {
+          if (s.active && state.startTs <= s.start) { toast('خلّص التحدي الحالي الأول يا بطل 💪'); return; }
+          s.active = c.id; s.start = Date.now(); save(); renderChal2();
+          toast('تحدي ' + c.name + ' بدأ! ' + c.days + ' ' + U.day(c.days) + ' من غير ولا انتكاسة 🔥');
+        };
+      }
+      grid.appendChild(card);
+    });
   }
 
   /* ---------- مهام: فان التقويم ---------- */
@@ -3106,9 +3620,11 @@
   bindNotes();
   bindAvatar();
   bindFan();
+  bindOcc();
   if (load()) {
     applyAccent();
     applyTheme();
+    occNavSync();
     boot();
   } else {
     startOnboarding();

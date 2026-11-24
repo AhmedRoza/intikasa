@@ -30,12 +30,13 @@ try {
 <!-- PIN lock -->
 <div id="lock" class="overlay hidden">
   <div class="lock-box">
-    <div class="lock-icon">🔒</div>
+    <img id="lock-img" class="lock-img" src="img/lock-1.jpg" alt="">
     <div class="lock-title">انتكاسة</div>
     <div class="dots" id="lock-dots"><span></span><span></span><span></span><span></span></div>
     <div class="pad" id="lock-pad"></div>
     <div class="lock-msg" id="lock-msg"></div>
     <button id="lock-bio" class="btn ghost hidden" style="margin-top:14px">👆 دخول بالبصمة</button>
+    <button id="lock-exit" class="btn ghost" style="margin-top:10px" onclick="window.AndroidBridge&&AndroidBridge.exitApp?AndroidBridge.exitApp():window.close()">خروج</button>
   </div>
 </div>
 
@@ -77,7 +78,10 @@ try {
       <img class="home-meme" id="home-meme" src="img/meme-top.jpg" alt="">
       <div class="hero-title" id="hero-title"></div>
       <div id="counter"></div>
-      <img id="abajoura" class="abajoura hidden" src="img/abajoura.jpg" alt="">
+      <div id="abajoura-wrap" class="abajoura-wrap hidden">
+        <img id="abajoura" class="abajoura" src="img/abajoura.jpg" alt="">
+        <svg id="abajoura-ring" class="abajoura-ring" aria-hidden="true"><rect id="abajoura-ring-rect" pathLength="100"/></svg>
+      </div>
       <div class="style-dots" id="style-dots"></div>
       <div class="home-actions">
         <button class="btn danger" id="btn-relapse"><img class="relapse-face" src="img/shock-face.png" alt=""><span>انتكست</span></button>
@@ -91,6 +95,15 @@ try {
       <div class="card hidden" id="event-card">
         <div class="card-label">⏳ عدّاد المناسبة</div>
         <div id="event-body"></div>
+      </div>
+      <div class="card hidden" id="reco-card">
+        <div class="reco-head">
+          <div class="card-label">🌱 رحلة التعافي</div>
+          <button id="reco-hide" class="reco-x" aria-label="إخفاء">✕</button>
+        </div>
+        <div class="hint" id="reco-sub"></div>
+        <div id="reco-body"></div>
+        <div class="hint reco-note" id="reco-note"></div>
       </div>
       <div class="card" id="challenge-card">
         <div class="card-label">🏁 تحدي الـ 30 يوم</div>
@@ -200,6 +213,31 @@ try {
       <div class="hex-grid" id="hex-done"></div>
       <div class="card-label big-label">🎯 اللي جاي</div>
       <div id="ach-next"></div>
+    </section>
+
+    <!-- OCCASIONS -->
+    <section class="page hidden" id="page-occ">
+      <div class="page-hero"><img src="icons/calendar.png" alt=""></div>
+      <div class="card-label big-label">⏳ مناسبة</div>
+      <div class="card" id="occ-form">
+        <label class="row-label">اسم المناسبة</label>
+        <input id="occ-name" class="text-input" type="text" maxlength="40" placeholder="رمضان، عيد، سفرية..">
+        <label class="row-label">تاريخها</label>
+        <input id="occ-date" class="text-input" type="date">
+        <label class="row-label">لونها</label>
+        <div class="occ-colors" id="occ-colors"></div>
+        <button class="btn primary" id="occ-add" style="margin-top:12px">إضافة المناسبة ➕</button>
+      </div>
+      <div id="occ-list"></div>
+    </section>
+
+    <!-- CHALLENGES -->
+    <section class="page hidden" id="page-chal">
+      <div class="page-hero"><img src="icons/shield.png" alt=""></div>
+      <div class="card-label big-label">🏆 تحديات VIP</div>
+      <div id="chal2-active"></div>
+      <div id="chal2-grid" class="chal2-grid"></div>
+      <div class="hint" style="text-align:center;margin-top:12px">اختار تحدي واحد وابدأه.. لو انتكست، التحدي اللي انت فيه بيتصفّر وبيتحسب من الأول، وأوسمتك اللي كسبتها بتفضل معاك دايمًا 💪</div>
     </section>
 
     <!-- TREE -->
@@ -329,6 +367,14 @@ try {
           <button class="btn primary" id="event-save">حفظ</button>
           <button class="btn ghost" id="event-clear">مسح</button>
         </div>
+        <div class="occ-switch-row">
+          <span>تفعيل قسم «مناسبة» (كذا مناسبة + خريطة وعداد لكل واحدة)</span>
+          <button class="occ-switch" id="occ-toggle" aria-label="تفعيل قسم مناسبة"><span></span></button>
+        </div>
+        <div class="occ-switch-row">
+          <span>كارت «رحلة التعافي» في الرئيسية</span>
+          <button class="occ-switch" id="reco-toggle" aria-label="كارت رحلة التعافي"><span></span></button>
+        </div>
       </div>
       <div class="card">
         <div class="card-label">📤 شارك إحصائياتك</div>
@@ -349,7 +395,7 @@ try {
         </div>
       </div>
       <div class="card">
-        <div class="card-label">💾 النسخة الاحتياطية</div>
+        <div class="card-label">💾 النسخ الاحتياطي والتحديث</div>
         <div class="hint">احفظ نسخة من بياناتك على الموبايل — بتتحفظ في مجلد Downloads تقدر تلاقيها من أي مدير ملفات. كل حاجة عندك ومفيش حاجة بتطلع على النت. لو كتبت كلمة سر، النسخة هتتشفّر بيها ومحدش يقدر يفتحها من غيرها.</div>
         <label class="row-label">كلمة سر التشفير (اختياري)</label>
         <input id="backup-pw" class="text-input" type="password" maxlength="60" placeholder="سيبها فاضية لنسخة عادية">
@@ -358,12 +404,25 @@ try {
           <button class="btn ghost" id="btn-restore">استرجاع نسخة</button>
         </div>
         <input type="file" id="restore-file" accept=".json,.enc,application/json" class="hidden">
+        <div class="card-label" style="margin-top:18px">⬆️ تحديث التطبيق</div>
+        <div class="hint">البحث عن تحديث هو استخدام النت الوحيد في التطبيق: طلب واحد لـGitHub عن رقم آخر نسخة. مفيش بيانات عن عادتك أو نسختك الاحتياطية أو استخدامك بتتبعت خالص، بس زي أي اتصال بالنت، GitHub بيشوف بيانات الاتصال العادية زي عنوان الـIP. البحث التلقائي بيحصل لما بتفتح التطبيق بعد ما تعدي المدة اللي اخترتها.</div>
+        <label class="row-label">بحث تلقائي كل</label>
+        <select id="upd-freq" class="text-input">
+          <option value="manual">يدوي بس</option>
+          <option value="day">يوم</option>
+          <option value="week">أسبوع</option>
+          <option value="month">شهر</option>
+        </select>
+        <div class="row2">
+          <button class="btn ghost" id="btn-upd">ابحث الآن</button>
+        </div>
+        <div class="hint" id="upd-status"></div>
       </div>
       <div class="card">
         <div class="card-label">⚠️ منطقة خطرة</div>
         <button class="btn danger" id="btn-wipe">مسح كل البيانات</button>
       </div>
-      <div class="about">انتكاسة • الإصدار 1.9</div>
+      <div class="about">انتكاسة • الإصدار 1.11</div>
       <div class="flags-block">
         <img class="flags-img" src="img/flags.jpg" alt="">
         <div class="flags-line">المطور يدعم القضية الفلسطينية 🇵🇸</div>
@@ -396,8 +455,10 @@ try {
     <button class="nav-btn active" data-page="home">🏠<span>الرئيسية</span></button>
     <button class="nav-btn" data-page="calendar">📅<span>التقويم</span></button>
     <button class="nav-btn" data-page="tasks">📋<span>مهام</span></button>
+    <button class="nav-btn hidden" data-page="occ" id="nav-occ">⏳<span>مناسبة</span></button>
     <button class="nav-btn" data-page="stats">📊<span>الإحصائيات</span></button>
     <button class="nav-btn" data-page="tree">🌳<span>شجرتي</span></button>
+    <button class="nav-btn" data-page="chal">🏆<span>التحديات</span></button>
     <button class="nav-btn" data-page="ach">🎖️<span>الأوسمة</span></button>
     <button class="nav-btn" data-page="profile">👤<span>حسابي</span></button>
   </nav>

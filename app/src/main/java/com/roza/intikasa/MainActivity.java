@@ -91,6 +91,41 @@ public class MainActivity extends Activity {
 
     class Bridge {
         @JavascriptInterface
+        public void exitApp() {
+            ui.post(() -> finishAffinity());
+        }
+
+        /* فحص التحديث: طلب واحد لـ GitHub API من الكود الأصلي — الويب فيو نفسه مبيتصلش بالنت خالص */
+        @JavascriptInterface
+        public void checkUpdate() {
+            new Thread(() -> {
+                String result;
+                try {
+                    java.net.HttpURLConnection c = (java.net.HttpURLConnection)
+                            new java.net.URL("https://api.github.com/repos/AhmedRoza/intikasa/releases/latest").openConnection();
+                    c.setRequestProperty("Accept", "application/vnd.github+json");
+                    c.setRequestProperty("User-Agent", "intikasa-android");
+                    c.setConnectTimeout(12000);
+                    c.setReadTimeout(12000);
+                    if (c.getResponseCode() == 200) {
+                        java.util.Scanner sc = new java.util.Scanner(c.getInputStream(), "UTF-8").useDelimiter("\\A");
+                        String body = sc.hasNext() ? sc.next() : "";
+                        java.util.regex.Matcher m = java.util.regex.Pattern
+                                .compile("\"tag_name\"\\s*:\\s*\"([^\"]+)\"").matcher(body);
+                        String tag = m.find() ? m.group(1) : "";
+                        result = "{\"ok\":true,\"tag\":\"" + tag + "\"}";
+                    } else {
+                        result = "{\"ok\":false}";
+                    }
+                    c.disconnect();
+                } catch (Exception e) {
+                    result = "{\"ok\":false}";
+                }
+                jsCallback("window.__updResult && __updResult(" + result + ")");
+            }).start();
+        }
+
+        @JavascriptInterface
         public void saveBackup(final String json, final String filename) {
             // بنحفظ النسخة في مجلد Downloads العام عشان يقدر يلاقيها من أي مدير ملفات
             try {
@@ -130,6 +165,18 @@ public class MainActivity extends Activity {
                 android.appwidget.AppWidgetManager mgr = android.appwidget.AppWidgetManager.getInstance(MainActivity.this);
                 int[] ids = mgr.getAppWidgetIds(new android.content.ComponentName(MainActivity.this, WidgetCounterProvider.class));
                 for (int id : ids) WidgetCounterProvider.update(MainActivity.this, mgr, id);
+            } catch (Exception ignored) {
+            }
+        }
+
+        @JavascriptInterface
+        public void saveOccasions(final String json) {
+            try {
+                android.content.SharedPreferences p = getSharedPreferences(WidgetCounterProvider.PREFS, MODE_PRIVATE);
+                p.edit().putString("occasionsJson", json).apply();
+                android.appwidget.AppWidgetManager mgr = android.appwidget.AppWidgetManager.getInstance(MainActivity.this);
+                int[] ids = mgr.getAppWidgetIds(new android.content.ComponentName(MainActivity.this, WidgetOccasionProvider.class));
+                for (int id : ids) WidgetOccasionProvider.update(MainActivity.this, mgr, id);
             } catch (Exception ignored) {
             }
         }
@@ -191,8 +238,22 @@ public class MainActivity extends Activity {
                 ComponentName main = new ComponentName(MainActivity.this, MainActivity.class);
                 ComponentName cap = new ComponentName(MainActivity.this, "com.roza.intikasa.CapAlias");
                 ComponentName stick = new ComponentName(MainActivity.this, "com.roza.intikasa.StickAlias");
-                ComponentName active = "cap".equals(mode) ? cap : ("stick".equals(mode) ? stick : main);
-                ComponentName[] all = { main, cap, stick };
+                ComponentName logo1 = new ComponentName(MainActivity.this, "com.roza.intikasa.Logo1Alias");
+                ComponentName logo2 = new ComponentName(MainActivity.this, "com.roza.intikasa.Logo2Alias");
+                ComponentName logo3 = new ComponentName(MainActivity.this, "com.roza.intikasa.Logo3Alias");
+                ComponentName logo4 = new ComponentName(MainActivity.this, "com.roza.intikasa.Logo4Alias");
+                ComponentName logo5 = new ComponentName(MainActivity.this, "com.roza.intikasa.Logo5Alias");
+                ComponentName logo6 = new ComponentName(MainActivity.this, "com.roza.intikasa.Logo6Alias");
+                ComponentName logo7 = new ComponentName(MainActivity.this, "com.roza.intikasa.Logo7Alias");
+                ComponentName logo8 = new ComponentName(MainActivity.this, "com.roza.intikasa.Logo8Alias");
+                ComponentName logo9 = new ComponentName(MainActivity.this, "com.roza.intikasa.Logo9Alias");
+                ComponentName active = "cap".equals(mode) ? cap : ("stick".equals(mode) ? stick
+                        : ("logo1".equals(mode) ? logo1 : ("logo2".equals(mode) ? logo2
+                        : ("logo3".equals(mode) ? logo3 : ("logo4".equals(mode) ? logo4
+                        : ("logo5".equals(mode) ? logo5 : ("logo6".equals(mode) ? logo6
+                        : ("logo7".equals(mode) ? logo7 : ("logo8".equals(mode) ? logo8
+                        : ("logo9".equals(mode) ? logo9 : main))))))))));
+                ComponentName[] all = { main, cap, stick, logo1, logo2, logo3, logo4, logo5, logo6, logo7, logo8, logo9 };
                 for (ComponentName c : all) {
                     pm.setComponentEnabledSetting(c,
                             c.equals(active) ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
@@ -253,6 +314,13 @@ public class MainActivity extends Activity {
                 }
             }).start();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // لو القفل متفعل، نطلبه تاني عند الرجوع للتطبيق (الـJS بيقرر حسب مدة الغياب)
+        if (web != null) web.evaluateJavascript("window.__intikasaResume && __intikasaResume()", null);
     }
 
     @Override

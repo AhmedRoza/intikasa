@@ -1,0 +1,30 @@
+انتكاسة v1.11 — التغييرات:
+
+١. العلم اللي جنب الإعدادات رجع زي ما هو بالظبط بكل ألوانه، واللي اتشال هو الخلفية اللي حواليه بس.
+٢. الصور فوق العداد: اتشالت صورة الراجل اللي باصص بعين واحدة، والباقي لسه بيتبدل.
+٣. صورة الأباجورة بعد الانتكاسة: حواليها خط بيقل تدريجيًا خلال الـ٣ دقايق.
+٤. القفل: اتصلحت مشكلة إعداد الرقم، وبقى يقفل عند كل فتح أو رجوع للتطبيق، مع ٣ صور بتتبدل وزر خروج واضح.
+٥. تخفيف التطبيق: الصور اتضغطت واتشالت تأثيرات تمويه كانت بتستهلك موارد.
+٦. المناسبات: تبويب مستقل تفعّله من الإعدادات، مناسبات متعددة باسم ولون وتاريخ، عداد بالأيام والساعات والدقايق والثواني، خريطة شهور لكل مناسبة، وودجت للشاشة الرئيسية بتختار فيه أي مناسبة تظهر.
+٧. تحديات VIP: تاب جديد فيه ١٠ تحديات بأسماء وأوسمة خاصة. تحدي واحد في نفس الوقت، ولو انتكست التحدي الحالي بيتصفّر ويبدأ من الأول وأوسمتك المكتسبة بتفضل معاك. التحديات القديمة بأوسمتها النيون زي ما هي.
+٨. كارت التعافي: معلومات ونصايح عامة عن التعافي على حسب العادة (سجاير / سكر / نوم) من مصادر طبية موثوقة، وتقدر تقفله في أي وقت.
+٩. أيقونات التطبيق: ١٢ أيقونة تختار منهم من الإعدادات.
+١٠. التوهج: ظل ملون هادي بينبض على كل الكروت.
+١١. كارت «النسخ الاحتياطي والتحديث» في الإعدادات: النسخ والاستعادة زي ما هما، ومعاهم البحث عن تحديث — تلقائي كل يوم أو أسبوع أو شهر أو يدوي، وزرار «ابحث الآن». البحث بيسأل GitHub عن رقم آخر نسخة بس، ومفيش بيانات عن عادتك أو نسختك الاحتياطية أو استخدامك بتتبعت، بس GitHub بيشوف بيانات الاتصال العادية زي عنوان الـIP، وعشان كده التطبيق بقى محتاج إذن الإنترنت.
+
+Intikasa v1.11 — changes:
+
+1. Header flag restored exactly as the original artwork; only the surrounding background is transparent.
+2. Counter-top photo rotation: the one-eyed-man photo removed.
+3. Relapse meme: a shrinking progress ring around it for the 3 minutes.
+4. PIN lock fixed (setup bug), locks on every open/return, 3 rotating lock images, clear exit button.
+5. Performance: images compressed, always-on blur effects removed.
+6. Occasions: own tab, activation switch, multiple named/colored occasions, live countdown, per-occasion month maps, home-screen widget with occasion picker.
+7. VIP Challenges: new tab with 10 named challenges and custom medals; one active at a time; a relapse resets only the current challenge; earned medals stay forever; original neon challenges unchanged.
+8. Recovery card: general guidance per habit (cigarettes / sugar / sleep) from trusted medical sources (NHS, Verywell Health, Sleep Foundation), dismissible.
+9. 12 launcher icons to choose from.
+10. Soft colored glow pulsing on all cards.
+11. Backup & update card in Settings: local backup/restore unchanged, plus update check — auto daily/weekly/monthly on app open or manual, with a check-now button. The check only asks GitHub for the latest version number; no habit records, backups, or usage data are uploaded, and GitHub receives ordinary connection metadata such as your IP address. The app now requires the internet permission for this.
+
+SHA-256 (intikasa-v1.11.apk): ecfc30c13ab4733ba68fc37c3098fd7aa1bacfd69d21c7d1cf8bc84de0b491e5
+

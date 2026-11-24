@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>انتكاسة</title>
+<script>
+// stealth: swap the visible app name as early as possible
+try {
+  var __st = JSON.parse(localStorage.getItem('intikasa.v1') || 'null');
+  if (__st && __st.stealth) {
+    document.title = 'ملاحظات';
+    document.addEventListener('DOMContentLoaded', function () {
+      var sn = document.querySelector('.splash-name'); if (sn) sn.textContent = 'ملاحظات';
+    });
+  }
+} catch (e) {}
+</script>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- splash loader -->
+<div id="splash">
+  <div class="splash-name">انتكاسة</div>
+  <div class="splash-dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- PIN lock -->
+<div id="lock" class="overlay hidden">
+  <div class="lock-box">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title">انتكاسة</div>
+    <div class="dots" id="lock-dots"><span></span><span></span><span></span><span></span></div>
+    <div class="pad" id="lock-pad"></div>
+    <div class="lock-msg" id="lock-msg"></div>
+    <button id="lock-bio" class="btn ghost hidden" style="margin-top:14px">👆 دخول بالبصمة</button>
+  </div>
+</div>
+
+<!-- Onboarding -->
+<div id="onboard" class="overlay hidden">
+  <div class="sheet onboard-sheet">
+    <div class="ob-step" id="ob-1">
+      <div class="ob-title">أهلاً بيك في <b>انتكاسة</b> 👋</div>
+      <div class="ob-sub">اختار العادة اللي عايز تتخلص منها</div>
+      <div class="habit-cards">
+        <button class="habit-card" data-habit="secret">🚫<span>العادة السرية</span></button>
+        <button class="habit-card" data-habit="smoking">🚬<span>التدخين</span></button>
+        <button class="habit-card" data-habit="custom">✍️<span>عادة تانية</span></button>
+      </div>
+      <input id="ob-custom-name" class="text-input hidden" type="text" maxlength="30" placeholder="اكتب اسم العادة">
+    </div>
+    <div class="ob-step hidden" id="ob-2">
+      <div class="ob-title">إمتى بدأت؟</div>
+      <div class="ob-sub">لو لسه بتبدأ دلوقتي، سيبها زي ما هي</div>
+      <input id="ob-start" class="text-input" type="datetime-local">
+      <button class="btn primary big" id="ob-go">يلا نبدأ 💪</button>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" class="hidden">
+  <header id="topbar">
+    <button id="gear" class="nav-arrow" style="width:36px;height:36px;font-size:17px">⚙️</button>
+    <img class="flag-icon flag-top" src="img/flag-fist.png" alt="">
+    <div class="app-name">انتكاسة</div>
+    <div class="habit-name" id="top-habit"></div>
+  </header>
+
+  <main id="pages">
+    <!-- HOME -->
+    <section class="page" id="page-home">
+      <div class="page-hero"><img src="icons/ring.png" alt=""></div>
+      <img class="home-meme" id="home-meme" src="img/meme-top.jpg" alt="">
+      <div class="hero-title" id="hero-title"></div>
+      <div id="counter"></div>
+      <img id="abajoura" class="abajoura hidden" src="img/abajoura.jpg" alt="">
+      <div class="style-dots" id="style-dots"></div>
+      <div class="home-actions">
+        <button class="btn danger" id="btn-relapse"><img class="relapse-face" src="img/shock-face.png" alt=""><span>انتكست</span></button>
+        <button class="btn ghost" id="btn-urge">💨 جاتلي رغبة</button>
+        <button class="btn ghost" id="btn-hardday">😓 يوم صعب</button>
+      </div>
+      <div class="card daily" id="daily-card">
+        <div class="card-label">💬 رسالة اليوم</div>
+        <div id="daily-text"></div>
+      </div>
+      <div class="card hidden" id="event-card">
+        <div class="card-label">⏳ عدّاد المناسبة</div>
+        <div id="event-body"></div>
+      </div>
+      <div class="card" id="challenge-card">
+        <div class="card-label">🏁 تحدي الـ 30 يوم</div>
+        <div id="challenge-body"></div>
+      </div>
+      <div class="card" id="wchallenge-card">
+        <div class="card-label">⚡ تحدي الأسبوع</div>
+        <div id="wchallenge-body"></div>
+      </div>
+      <div class="card heatmap-card">
+        <div class="card-label">🗺️ خريطة الانضباط</div>
+        <div class="hm-grid" id="hm-grid"></div>
+      </div>
+      <div class="stat-row">
+        <div class="mini-stat"><div class="mini-num" id="ms-longest">0</div><div class="mini-label">أطول سلسلة</div></div>
+        <div class="mini-stat"><div class="mini-num" id="ms-shortest">0</div><div class="mini-label">أقصر سلسلة</div></div>
+        <div class="mini-stat"><div class="mini-num" id="ms-relapses">0</div><div class="mini-label">انتكاسة</div></div>
+        <div class="mini-stat"><div class="mini-num" id="ms-total">0</div><div class="mini-label">يوم انضباط</div></div>
+      </div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section class="page hidden" id="page-calendar">
+      <div class="page-hero"><img src="icons/calendar.png" alt=""></div>
+      <div class="cal-head">
+        <button class="nav-arrow" id="cal-prev">‹</button>
+        <div class="cal-title" id="cal-title"></div>
+        <button class="nav-arrow" id="cal-next">›</button>
+      </div>
+      <div class="cal-week" id="cal-week"></div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="pill-summary" id="cal-summary"></div>
+      <div class="legend">
+        <span><i class="dot clean"></i> منضبط</span>
+        <span><i class="dot rel"></i> انتكاسة</span>
+        <span><i class="dot today"></i> النهاردة</span>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="page hidden" id="page-stats">
+      <div class="page-hero"><img src="icons/rise.png" alt=""></div>
+      <div class="card swappable" id="report-card">
+        <div class="card-label" id="report-title">📈 التقرير الأسبوعي</div>
+        <div id="weekly-body"></div>
+        <div class="style-dots" id="report-dots"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">🎯 نسبة الانضباط</div>
+        <div class="disc-wrap">
+          <svg class="disc-donut" viewBox="-14 -14 148 148">
+            <circle cx="60" cy="60" r="52" fill="none" class="disc-track" stroke-width="7"/>
+            <circle id="disc-donut-arc" cx="60" cy="60" r="52" fill="none" stroke="var(--acc)" stroke-width="7" stroke-linecap="round" transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="disc-num" id="disc-pct">0%</div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card stat"><div class="stat-num" id="st-longest">0</div><div class="stat-label">أطول مدة</div></div>
+        <div class="card stat"><div class="stat-num" id="st-current">0</div><div class="stat-label">بقالي كام يوم منضبط من آخر انتكاسة</div></div>
+        <div class="card stat"><div class="stat-num" id="st-shortest">0</div><div class="stat-label">أقصر مدة</div></div>
+        <div class="card stat"><div class="stat-num" id="st-relapses">0</div><div class="stat-label">انتكست كام مرة</div></div>
+        <div class="card stat"><div class="stat-num small" id="st-since">-</div><div class="stat-label">تاريخ البدء</div></div>
+        <div class="card stat"><div class="stat-num" id="st-pct">0</div><div class="stat-label">نسبة الانضباط من البداية</div></div>
+        <div class="card stat"><div class="stat-num" id="st-month">0</div><div class="stat-label" id="st-month-label">الشهر ده 🆚 اللي فات</div></div>
+        <div class="card stat"><div class="stat-num" id="st-gap">0</div><div class="stat-label">أطول فترة بين انتكاستين</div></div>
+        <div class="card stat"><div class="stat-num" id="st-nextmedal">0</div><div class="stat-label" id="st-nextmedal-label">باقي على الوسام الجاي</div></div>
+        <div class="card stat"><div class="stat-num" id="st-resist">0</div><div class="stat-label">قاومت الرغبة كام مرة</div></div>
+        <div class="card stat"><div class="stat-num" id="st-recovery">0</div><div class="stat-label">متوسط الرجوع للثبات بعد الانتكاسة</div></div>
+        <div class="card stat"><div class="stat-num" id="st-nohard">0</div><div class="stat-label">كام يوم عدى من غير ولا يوم صعب</div></div>
+      </div>
+      <div class="card">
+        <div class="card-label">📊 آخر ٨ أسابيع (أيام انضباط)</div>
+        <div class="bars" id="week-bars"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">📆 سجل الانضباط</div>
+        <div class="cg-wrap" id="cg-grid"></div>
+        <div class="dc-sep"></div>
+        <div class="mh-head">
+          <button class="btn ghost small" id="dc-prev">‹ اللي فات</button>
+          <div class="mh-title" id="dc-title"></div>
+          <button class="btn ghost small" id="dc-next">الجاي ›</button>
+        </div>
+        <div class="mh-days" id="dc-days"></div>
+        <div class="dc-grid" id="dc-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">⚖️ الشهر ده 🆚 اللي فات</div>
+        <div id="mv-body"></div>
+        <button class="btn primary big" id="month-share" style="width:100%;margin-top:12px">📤 شارك ملخص الشهر (من غير اسم العادة)</button>
+      </div>
+      <div class="card">
+        <div class="card-label">🧠 أكتر الأسباب تكرارًا</div>
+        <div id="reason-list"><div class="empty">لسه مفيش انتكاسات مسجلة، وده كويس 💪</div></div>
+      </div>
+      <div class="card">
+        <div class="card-label">😓 الأيام الصعبة</div>
+        <div id="harddays-body"></div>
+      </div>
+    </section>
+
+    <!-- ACHIEVEMENTS -->
+    <section class="page hidden" id="page-ach">
+      <div class="page-hero"><img src="icons/shield.png" alt=""></div>
+      <div class="card-label big-label">🎖️ أوسمتي</div>
+      <div class="hex-grid" id="hex-done"></div>
+      <div class="card-label big-label">🎯 اللي جاي</div>
+      <div id="ach-next"></div>
+    </section>
+
+    <!-- TREE -->
+    <section class="page hidden" id="page-tree">
+      <div class="page-hero"><img src="icons/flame.png" alt=""></div>
+      <div class="tree-stage" id="tree-stage"></div>
+      <div class="tree-wrap" id="tree-wrap"></div>
+      <div class="progress-wrap" style="margin-top:16px"><div class="progress" id="tree-progress"></div></div>
+      <div class="next-sub" id="tree-next" style="text-align:center"></div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-label">🌱 إزاي بتكبر؟</div>
+        <div class="hint">كل يوم انضباط بتكبر شجرتك. لو حصلت انتكاسة بترجع صغيرة وتبدأ تكبر من الأول معاك. شجعتك = عمر شجرتك.</div>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="page hidden" id="page-profile">
+      <div class="profile-head">
+        <div class="avatar-wrap" id="avatar-wrap"></div>
+        <div class="profile-name" id="profile-name"></div>
+        <div class="profile-sub" id="profile-sub"></div>
+        <button class="btn ghost small" id="avatar-edit">غيّر الصورة</button>
+      </div>
+      <div id="legend-banner" class="legend-banner hidden">
+        <img src="img/legend-podium.jpg" alt="">
+        <div class="legend-quote">
+          <div class="legend-quote-ar">"انت المُصلح الوحيد لنفسك"</div>
+          <div class="legend-quote-en">"You are the only reformer to yourself"</div>
+        </div>
+      </div>
+      <div class="card level-card">
+        <div class="level-head"><span id="level-name">مبتدئ</span><span id="level-xp">0 نقطة</span></div>
+        <div class="progress-wrap"><div class="progress" id="level-progress"></div></div>
+        <div class="next-sub" id="level-next"></div>
+      </div>
+      <div class="stat-row">
+        <div class="mini-stat"><div class="mini-num" id="pf-streak">0</div><div class="mini-label">السلسلة الحالية</div></div>
+        <div class="mini-stat"><div class="mini-num" id="pf-shortest">0</div><div class="mini-label">أقصر سلسلة</div></div>
+        <div class="mini-stat"><div class="mini-num" id="pf-total">0</div><div class="mini-label">يوم انضباط</div></div>
+        <div class="mini-stat"><div class="mini-num" id="pf-relapses">0</div><div class="mini-label">انتكاسة</div></div>
+        <div class="mini-stat"><div class="mini-num" id="pf-rewards">0</div><div class="mini-label">وسام</div></div>
+      </div>
+      <div class="card">
+        <div class="card-label">🛤️ رحلتي</div>
+        <div id="journey"></div>
+      </div>
+      <div class="next-card" id="pf-next"></div>
+      <div class="card-label big-label">🎖️ أوسمتي</div>
+      <img id="pf-meme-empty" class="ach-meme-empty hidden" src="img/ach-empty.jpg" alt="">
+      <div class="rewards-grid" id="profile-rewards"></div>
+      <img id="pf-meme-pointer" class="ach-meme-pointer hidden" src="img/ach-pointer.jpg" alt="">
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page hidden" id="page-settings">
+      <div class="page-hero"><img src="icons/pulse.png" alt=""></div>
+      <div class="card">
+        <div class="card-label">🎯 العادة</div>
+        <div class="habit-pick" id="habit-pick">
+          <button data-habit="smoking">🚬 التدخين</button>
+          <button data-habit="secret">🤫 العادة السرية</button>
+          <button data-habit="custom">✍️ عادة تانية</button>
+        </div>
+        <label class="row-label">اسم العادة</label>
+        <input id="set-habit" class="text-input" type="text" maxlength="30">
+        <label class="row-label">اسمك في التطبيق</label>
+        <input id="set-name" class="text-input" type="text" maxlength="30" placeholder="بطل التعافي">
+        <label class="row-label">عنوان العداد</label>
+        <input id="set-title" class="text-input" type="text" maxlength="60" placeholder="متخلّص من {العادة} منذ">
+        <label class="row-label">تاريخ ووقت البدء</label>
+        <input id="set-start" class="text-input" type="datetime-local">
+        <button class="btn primary" id="set-save">حفظ</button>
+      </div>
+      <div class="card">
+        <div class="card-label">🖼️ الصورة الشخصية</div>
+        <div class="hint">غيّر صورتك: صورة من الموبايل، شخصية جاهزة، أو الافتراضية.</div>
+        <button class="btn primary" id="set-avatar">تغيير الصورة</button>
+      </div>
+      <div class="card">
+        <div class="card-label">🎨 شكل العداد</div>
+        <div class="hint">دوس على الشكال اللي عايزها، وهتقدر تتنقل بينها من الرئيسية بسحبة يمين أو شمال أو من النقط.</div>
+        <div class="style-picker" id="style-picker"></div>
+        <div class="card-label" style="margin-top:14px">🎨 لون العداد</div>
+        <div class="hint">لون خاص بالعداد بس، من غير ما يغيّر لون التطبيق كله.</div>
+        <div class="swatches" id="counter-swatches"></div>
+        <div class="accent-custom-row">
+          <input type="color" id="counter-accent-custom" value="#2dd4bf">
+          <span class="hint">أو لون مخصوص للعداد</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">🌓 مظهر التطبيق</div>
+        <div class="theme-row" id="theme-picker">
+          <button class="btn ghost theme-btn on" data-theme="dark">🌙 داكن</button>
+          <button class="btn ghost theme-btn" data-theme="light">☀️ فاتح</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">🌈 لون التطبيق</div>
+        <div class="swatches" id="swatches"></div>
+        <div class="accent-custom-row">
+          <input type="color" id="accent-custom" value="#2dd4bf">
+          <span class="hint">أو اختار أي لون تاني على مزاجك</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">🔐 قفل التطبيق</div>
+        <div id="pin-area"></div>
+        <div id="bio-area"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">🎖️ ستايل الأوسمة</div>
+        <div class="theme-row" id="medalstyle-picker">
+          <button class="btn ghost theme-btn" data-ms="neon">نيون</button>
+          <button class="btn ghost theme-btn" data-ms="gold">ذهبي</button>
+          <button class="btn ghost theme-btn" data-ms="minimal">مينيمال</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">⏳ مناسبة مهمة</div>
+        <div class="hint">عداد تنازلي لمناسبة قريبة (زي رمضان أو مناسبة شخصية).</div>
+        <label class="row-label">اسم المناسبة</label>
+        <input id="event-name" class="text-input" type="text" maxlength="40" placeholder="رمضان">
+        <label class="row-label">تاريخها</label>
+        <input id="event-date" class="text-input" type="date">
+        <div class="row2">
+          <button class="btn primary" id="event-save">حفظ</button>
+          <button class="btn ghost" id="event-clear">مسح</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">📤 شارك إحصائياتك</div>
+        <div class="hint">صورة واحدة فيها كل إحصائياتك مع صورتك واسم عادتك، جاهزة تتشارك في أي حتة.</div>
+        <button class="btn primary" id="stats-share">جهّز الصورة 📤</button>
+      </div>
+      <div class="card">
+        <div class="card-label">🖼️ أيقونة التطبيق</div>
+        <div class="hint">اختار شكل أيقونة التطبيق على الموبايل.</div>
+        <div class="icon-pick" id="icon-pick"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">💬 عبارات التحفيز</div>
+        <div id="phrase-list"></div>
+        <div class="phrase-add">
+          <input id="phrase-input" class="text-input" type="text" maxlength="120" placeholder="ضيف عبارة بتشجعك">
+          <button class="btn ghost" id="phrase-add-btn">ضيف</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">💾 النسخة الاحتياطية</div>
+        <div class="hint">احفظ نسخة من بياناتك على الموبايل — بتتحفظ في مجلد Downloads تقدر تلاقيها من أي مدير ملفات. كل حاجة عندك ومفيش حاجة بتطلع على النت. لو كتبت كلمة سر، النسخة هتتشفّر بيها ومحدش يقدر يفتحها من غيرها.</div>
+        <label class="row-label">كلمة سر التشفير (اختياري)</label>
+        <input id="backup-pw" class="text-input" type="password" maxlength="60" placeholder="سيبها فاضية لنسخة عادية">
+        <div class="row2">
+          <button class="btn ghost" id="btn-backup">حفظ نسخة</button>
+          <button class="btn ghost" id="btn-restore">استرجاع نسخة</button>
+        </div>
+        <input type="file" id="restore-file" accept=".json,.enc,application/json" class="hidden">
+      </div>
+      <div class="card">
+        <div class="card-label">⚠️ منطقة خطرة</div>
+        <button class="btn danger" id="btn-wipe">مسح كل البيانات</button>
+      </div>
+      <div class="about">انتكاسة • الإصدار 1.9</div>
+      <div class="flags-block">
+        <img class="flags-img" src="img/flags.jpg" alt="">
+        <div class="flags-line">المطور يدعم القضية الفلسطينية 🇵🇸</div>
+        <div class="flags-dua">اللهم ارفع عنهم البلاء وأمّن روعتهم واحفظهم من كل شر</div>
+      </div>
+      <div class="hamatah">تم التصميم بواسطة حماته بكل حب ♥</div>
+    </section>
+
+    <section class="page hidden" id="page-tasks">
+      <div class="fan-wrap" id="fan-wrap">
+        <div class="fan-world" id="fan-world"></div>
+        <div class="fan-hint">اسحب عشان تتنقل بين الأيام 👆 ودوس على أي يوم</div>
+      </div>
+      <div class="day-zoom hidden" id="day-zoom">
+        <button class="dz-close" id="dz-close">✕</button>
+        <div class="dz-head">
+          <div class="dz-circle" id="dz-circle"><span id="dz-num"></span></div>
+          <div class="dz-month" id="dz-month"></div>
+        </div>
+        <div class="dz-chips" id="dz-chips"></div>
+        <div class="dz-add">
+          <input id="dz-input" class="text-input" type="text" maxlength="60" placeholder="مهمة جديدة لليوم ده...">
+          <button class="btn primary" id="dz-add">ضيف</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav id="bottomnav">
+    <button class="nav-btn active" data-page="home">🏠<span>الرئيسية</span></button>
+    <button class="nav-btn" data-page="calendar">📅<span>التقويم</span></button>
+    <button class="nav-btn" data-page="tasks">📋<span>مهام</span></button>
+    <button class="nav-btn" data-page="stats">📊<span>الإحصائيات</span></button>
+    <button class="nav-btn" data-page="tree">🌳<span>شجرتي</span></button>
+    <button class="nav-btn" data-page="ach">🎖️<span>الأوسمة</span></button>
+    <button class="nav-btn" data-page="profile">👤<span>حسابي</span></button>
+  </nav>
+</div>
+
+<!-- Relapse sheet -->
+<div id="relapse-modal" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-title">حصلت انتكاسة؟</div>
+    <div class="sheet-sub">متجلدش نفسك. المهم إنك لسه مكمل، وسجّلها عشان تفهم نفسك أكتر.</div>
+    <div class="card-label">إيه السبب؟ (اختياري)</div>
+    <div class="chips" id="reason-chips"></div>
+    <input id="relapse-note" class="text-input" type="text" maxlength="120" placeholder="ملاحظة (اختياري)">
+    <div class="row2">
+      <button class="btn ghost" id="relapse-cancel">لأ، غلطة</button>
+      <button class="btn danger" id="relapse-confirm">أيوه، سجّلها</button>
+    </div>
+  </div>
+</div>
+
+<!-- relapse confirm -->
+<div id="relapse-confirm-modal" class="overlay hidden">
+  <div class="sheet center-sheet">
+    <img class="relapse-meme" id="relapse-meme" src="img/dog-relapse.jpg" alt="">
+    <div class="sheet-title" id="relapse-meme-title">انا كلب و انتكست</div>
+    <div class="sheet-sub">تسجيل الانتكاسة هيرجّع العداد للصفر وتبدأ سلسلة جديدة. مفيش رجعة بعد التأكيد.</div>
+    <div class="row2">
+      <button class="btn ghost" id="rc-back">رجوع</button>
+      <button class="btn danger" id="rc-yes">أيوه، متأكد</button>
+    </div>
+  </div>
+</div>
+
+<!-- GO STUDY meme: بيظهر لو التطبيق فضل مفتوح ٥ دقايق (مرة واحدة بس) -->
+<div id="go-study" class="overlay hidden">
+  <div class="sheet center-sheet">
+    <img class="relapse-meme" src="img/go-study.png" alt="">
+    <button class="btn ghost" id="go-study-close" style="width:100%">حاضر 😅</button>
+  </div>
+</div>
+
+<!-- after-relapse rich stats -->
+<div id="dev-thanks" class="overlay hidden">
+  <div class="sheet sheet-scroll center-sheet">
+    <div class="chal-trophy">💙</div>
+    <div class="sheet-title">60 يوم! إنت وصلت لرقم قليل بيوصله</div>
+    <div class="sub" style="margin:10px 0 6px">رسالة صغيرة: التطبيق ده اتعمل بحب بواسطة <b>أحمد روزا</b> — شكر خاص ليه على الفكرة والمجهود 🙏</div>
+    <div class="sub" style="margin:0 0 14px">لو حابب تشوف شغله أو تتواصل معاه:</div>
+    <button class="btn primary" id="dev-link-btn">📸 إنستجرام أحمد روزا</button>
+    <button class="btn ghost" id="dev-thanks-close" style="margin-top:8px">كمّل رحلتك 💪</button>
+  </div>
+</div>
+
+<div id="challenge-win" class="overlay hidden">
+  <div class="sheet sheet-scroll center-sheet">
+    <div class="chal-trophy">🏆</div>
+    <div class="sheet-title">كسبت التحدي! 🎉</div>
+    <div class="sub" style="margin:8px 0 6px">30 يوم متواصلين من غير ولا انتكاسة.. إنت عملت اللي كتير بيفشلوا فيه.</div>
+    <div class="sub" style="margin:0 0 14px">مكافأتك: <b style="color:var(--acc)">وسام التحدي الذهبي</b> — هتلاقيه في صفحة الأوسمة 🏅</div>
+    <button class="btn primary" id="chalwin-close">أنا بطل فعلاً 💪</button>
+  </div>
+</div>
+
+<div id="perfect-win" class="overlay hidden">
+  <div class="sheet sheet-scroll center-sheet">
+    <div class="perfect-sticker-wrap">
+      <div id="perfect-sticker-emoji" class="perfect-emoji">🌟</div>
+      <img id="perfect-sticker-img" class="perfect-sticker hidden" src="img/perfect-sticker.png" alt="">
+    </div>
+    <div class="sheet-title">أسبوع مثالي! ✨</div>
+    <div class="sub" style="margin:8px 0 6px">٧ أيام متواصلين نضاف، من غير ولا يوم صعب.. دي أصعب سلسلة ممكن تتعمل.</div>
+    <div class="sub" style="margin:0 0 14px">مكافأتك: <b style="color:var(--acc)">ملصق الأسبوع المثالي</b> — هتلاقيه في أوسمتك 🏅</div>
+    <button class="btn primary" id="perfect-close">أنا استاهلها 💪</button>
+  </div>
+</div>
+
+<div id="medal3-modal" class="overlay hidden">
+  <div class="sheet sheet-scroll center-sheet">
+    <img src="img/batman.jpg" class="batman-img" alt="">
+    <div class="sheet-title">تالت وسام! 🎖️🎖️🎖️</div>
+    <div class="sub" style="margin:8px 0 14px">٣ أوسمة كاملة.. إنت مش بتجرّب، إنت بقيت باتمان الحقيقي 🦇 كل يوم بتعدّيه بيثبت إنك أقوى من أي رغبة. فخورين بيك يا بطل.</div>
+    <button class="btn primary" id="medal3-close">كمّل يا بطل 🦇</button>
+  </div>
+</div>
+
+<!-- تذكير شهري بعد أول انتكاسة في الشهر -->
+<div id="reminder-modal" class="overlay hidden">
+  <div class="sheet" style="text-align:center">
+    <div class="sheet-title">Reminder</div>
+    <div class="reminder-body">تذكر لماذا بدأت..</div>
+    <button class="btn primary big" id="reminder-ok">Okay</button>
+  </div>
+</div>
+
+<div id="after-relapse" class="overlay hidden">
+  <div class="sheet sheet-scroll">
+    <div class="ar-guy"><img src="img/relapse-guy.png" alt=""></div>
+    <div class="sheet-title">واقعة وبتعدّي.. المهم إنك قومت تاني 💪</div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="card stat"><div class="stat-num" id="ar-count">0</div><div class="stat-label">إجمالي الانتكاسات</div></div>
+      <div class="card stat"><div class="stat-num" id="ar-longest">0</div><div class="stat-label">أطول سلسلة (يوم)</div></div>
+      <div class="card stat"><div class="stat-num" id="ar-shortest">0</div><div class="stat-label">أقصر سلسلة (يوم)</div></div>
+      <div class="card stat"><div class="stat-num" id="ar-clean">0</div><div class="stat-label">يوم انضباط إجمالي</div></div>
+    </div>
+    <div class="card" style="margin-top:10px">
+      <div class="card-label">📅 أيام الانتكاسة في الشهر ده</div>
+      <div class="chips" id="ar-month-days"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">🔍 إيه اللي بيحصل؟</div>
+      <div id="ar-insight"></div>
+    </div>
+    <button class="btn primary big" id="ar-close">يلا نبدأ من جديد 💪</button>
+  </div>
+</div>
+
+<!-- Urge overlay -->
+<div id="urge" class="overlay hidden">
+  <div class="urge-box">
+    <div class="sheet-title">خد نفس.. الرغبة هتعدّي 🌊</div>
+    <div class="breath-wrap">
+      <div class="breath-circle" id="breath-circle"></div>
+      <div class="breath-text" id="breath-text">شهيق</div>
+    </div>
+    <div class="urge-timer" id="urge-timer">10:00</div>
+    <div class="urge-phrase" id="urge-phrase"></div>
+    <div class="row2" id="urge-actions">
+      <button class="btn ghost" id="urge-relapse">حصلت انتكاسة</button>
+      <button class="btn primary" id="urge-done">الرغبة عدّت ✊</button>
+    </div>
+    <div class="urge-strength hidden" id="urge-strength">
+      <div class="urge-strength-q">برافو عليك 🎉 الرغبة كانت قد إيه؟</div>
+      <div class="chips urge-strength-chips">
+        <button class="chip" data-s="1">🍃 خفيفة</button>
+        <button class="chip" data-s="2">🌊 متوسطة</button>
+        <button class="chip" data-s="3">🔥 قوية</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- day note sheet -->
+<div id="note-modal" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-title" id="note-title">ملاحظة</div>
+    <textarea id="note-text" class="text-input" rows="3" maxlength="300" placeholder="اكتب ملاحظة عن اليوم ده"></textarea>
+    <div class="row2">
+      <button class="btn danger" id="note-delete">مسح</button>
+      <button class="btn primary" id="note-save">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- avatar picker -->
+<div id="avatar-modal" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-title">صورتك</div>
+    <div class="sheet-sub">اختار صورة من الموبايل أو شكل جاهز</div>
+    <button class="btn primary big" id="avatar-photo">📷 اختار صورة من الموبايل</button>
+    <button class="btn ghost big" id="avatar-default" style="margin-top:10px">🙂 الصورة الافتراضية</button>
+    <input type="file" id="avatar-file" accept="image/*" class="hidden">
+    <div class="card-label" style="margin-top:16px">أو شكل جاهز</div>
+    <div class="avatar-presets" id="avatar-presets"></div>
+    <div class="row2"><button class="btn ghost" id="avatar-cancel">إلغاء</button></div>
+  </div>
+</div>
+
+<!-- avatar crop -->
+<div id="crop-modal" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-title">ظبط صورتك</div>
+    <div class="sheet-sub">الصورة ظاهرة كاملة — كبّر من السلايدر واسحب لو عايز تقص جزء معيّن</div>
+    <div class="crop-stage"><canvas id="crop-canvas" width="560" height="560"></canvas></div>
+    <div class="crop-zoom"><span>🔍</span><input type="range" id="crop-zoom" min="100" max="300" value="100"></div>
+    <div class="row2">
+      <button class="btn primary" id="crop-ok">استخدم الصورة ✓</button>
+      <button class="btn ghost" id="crop-cancel">رجوع</button>
+    </div>
+  </div>
+</div>
+
+<!-- day details -->
+<div id="day-modal" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-title" id="dm-title"></div>
+    <div id="dm-body"></div>
+    <div class="row2"><button class="btn ghost" id="dm-close">قفل</button></div>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<script src="sketches.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

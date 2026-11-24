@@ -1,0 +1,28 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.roza.intikasa'
+    compileSdk 34
+    defaultConfig {
+        applicationId "com.roza.intikasa"
+        minSdk 24
+        targetSdk 34
+        versionCode 9
+        versionName "1.9"
+    }
+    signingConfigs {
+        release {
+            def kp = new Properties()
+            def kf = rootProject.file('keystore.properties')
+            if (kf.exists()) { kf.withInputStream { kp.load(it) } }
+            storeFile file('intikasa.keystore')
+            storePassword kp.getProperty('storePassword', '')
+            keyAlias kp.getProperty('keyAlias', 'intikasa')
+            keyPassword kp.getProperty('keyPassword', '')
+        }
+    }
+    buildTypes {
+        release { signingConfig signingConfigs.release; minifyEnabled false }
+        debug { signingConfig signingConfigs.release }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
